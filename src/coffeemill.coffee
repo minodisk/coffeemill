@@ -16,11 +16,12 @@ exports.CoffeeMill = class CoffeeMill
   @help: ->
     """
     Usage    : coffeemill [-o output_dir] [-t test_dir] [src_dir]
-    Options  : -v, --version print coffeemill's version
-               -h, --help    print coffeemill's help
-               -o, --output  output directory (DEFAULT lib)
-               -t, --test    test directory (DEFAULT test)
-    Argument : watching directory (DEFAULT src)
+    Options  : -v, --version  print coffeemill's version
+               -h, --help     print coffeemill's help
+               -o, --output   output directory (default is lib)
+               -t, --test     test directory (default is test)
+               -c, --compress make compressed JavaScript
+    Argument : watching directory (default is src)
     """
 
   constructor: ->
