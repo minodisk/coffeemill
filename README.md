@@ -19,6 +19,7 @@ You can use some options.
     $ coffeemill -o js -t tests -c cs
 
 * `-v`, `--version` : print coffeemill's version
-* `-h`, `--help`    : print coffeemill's help
-* `-o`, `--output`  : output directory (DEFAULT lib)
-* `-t`, `--test`    : test directory (DEFAULT test)
+* `-h`, `--help` : print coffeemill's help
+* `-o`, `--output` : output directory (default *lib*)
+* `-t`, `--test` : test directory (default *test*)
+* `-c`, `--compress` : compress JavaScript
