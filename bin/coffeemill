@@ -1,0 +1,44 @@
+#!/usr/bin/env node
+(function() {
+  var CoffeeMill, arg, argv, coffeemill, compress, dstDir, flag, srcDir, testDir, _i, _len;
+  CoffeeMill = require('../lib/coffeemill').CoffeeMill;
+  coffeemill = new CoffeeMill();
+  argv = process.argv;
+  for (_i = 0, _len = argv.length; _i < _len; _i++) {
+    arg = argv[_i];
+    switch (arg) {
+      case '-v':
+      case '--version':
+        console.log(CoffeeMill.version());
+        return;
+      case '-h':
+      case '--help':
+        console.log(CoffeeMill.help());
+        return;
+      case '-o':
+      case '--out':
+        flag = 'o';
+        break;
+      case '-t':
+      case '--test':
+        flag = 't';
+        break;
+      case '-c':
+      case '--compress':
+        compress = true;
+        break;
+      default:
+        switch (flag) {
+          case 's':
+            srcDir = arg;
+            break;
+          case 'o':
+            dstDir = arg;
+            break;
+          case 't':
+            testDir = arg;
+        }
+    }
+  }
+  return coffeemill.grind(srcDir, dstDir, testDir, compress);
+})();

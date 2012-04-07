@@ -1,0 +1,28 @@
+{
+  "name"        :"coffeemill",
+  "version"     :"0.2.0",
+  "description" :"Compiles CoffeeScript with some options automatically, when something changes in watching directory.",
+  "tags"        :["auto", "watch", "coffee", "compile", "compress", "shrink"],
+  "author"      :{
+    "name" :"Daisuke MINO",
+    "email":"daisuke.mino@gmail.com"
+  },
+  "repository"  :{
+    "type":"git",
+    "url" :"https://minodisk@github.com/minodisk/coffeemill.git"
+  },
+  "engines"     :[
+    "node >= 0.6.0"
+  ],
+  "license"     :"MIT",
+  "dependencies":{
+    "coffee-script":">=1.2.0",
+    "uglify-js"    :">=1.1.1",
+    "relay"        :">=0.1.4",
+    "nodeunit"     :">=0.6.2"
+  },
+  "bin"         :{
+    "coffeemill":"./bin/coffeemill"
+  },
+  "main"        :"./lib/coffeemill"
+}
