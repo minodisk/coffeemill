@@ -16,20 +16,31 @@ exports.CoffeeMill = class CoffeeMill
   @help: ->
     """
     Usage    : coffeemill [-o output_dir] [-t test_dir] [src_dir]
-    Options  : -v, --version  print coffeemill's version
-               -h, --help     print coffeemill's help
-               -o, --output   output directory (default is lib)
-               -t, --test     test directory (default is test)
-               -c, --compress make compressed JavaScript
-    Argument : watching directory (default is src)
+    Options  : -o, --output [DIR] set the output directory for compiled JavaScript (lib)
+               -t, --test [DIR]   set the test directory (test)
+               -c, --compress     compress the compiled JavaScript
+               -b, --bare         compile without a top-level function wrapper
+               -j, --join [FILE]  concatenate the source CoffeeScript before compiling
+               -h, --help         display this help message
+               -v, --version      display the version number
+    Argument : source directory (src)
     """
 
   constructor: ->
     @requested = false
   
-  grind: (@srcDir = 'src', @dstDir = 'lib', @testDir = 'test', @isComplress = false)->
+  grind: (@srcDir = 'src', @dstDir = 'lib', @testDir = 'test', @isCompress = false, @isBare = false, @join = null)->
     @startWatch()
     @startCompile()
+    """
+    grind options:
+      source directory : #{@srcDir}
+      output directory : #{@dstDir}
+      test directory   : #{@testDir}
+      compress         : #{@isCompress}
+      bare             : #{@isBare}
+      join             : #{@join or false}
+    """
   
   startWatch: =>
     self = @
@@ -47,6 +58,7 @@ exports.CoffeeMill = class CoffeeMill
         )
       )
     ).start [self.srcDir, self.testDir]
+    return
 
   onDirChanged: (event, filename)=>
     self = @
@@ -57,6 +69,7 @@ exports.CoffeeMill = class CoffeeMill
         self.requested = false
         self.startCompile()
       ), 1000
+    return
   
   timeStamp: ->
     date = new Date()
@@ -94,28 +107,30 @@ exports.CoffeeMill = class CoffeeMill
             if err?
               @skip()
             else
+              opts =
+                bare: @isBare
+              if join?
+                opts.join = @join
               if CoffeeMill.R_ENV.test code
-                node = coffee.compile(
-                  code.replace CoffeeMill.R_ENV, (matched, $1, $2, offset, source)->
-                    if $2? then $2 else ''
-                )
-                browser = coffee.compile(
-                  code.replace CoffeeMill.R_ENV, (matched, $1, $2, offset, source)->
-                    if $1? then $1 else ''
-                )
+                node = code.replace CoffeeMill.R_ENV, (matched, $1, $2, offset, source)->
+                  if $2? then $2 else ''
+                node = coffee.compile node, opts
+                browser = code.replace CoffeeMill.R_ENV, (matched, $1, $2, offset, source)->
+                  if $1? then $1 else ''
+                browser = coffee.compile browser, opts
                 files = [
                   { path: "node/#{@local.basename}.js", code: node }
                   { path: "browser/#{@local.basename}.js", code: browser }
                 ]
-                if self.isComplress
+                if self.isCompress
                   files.push { path: "browser/#{@local.basename}.min.js", code: self.compress browser }
                 @next files
               else
-                code = coffee.compile code
+                code = coffee.compile code, opts
                 files = [
                   { path: "#{@local.basename}.js", code: code }
                 ]
-                if self.isComplress
+                if self.isCompress
                   files.push { path: "#{@local.basename}.min.js", code: self.compress code }
                 @next files
           )
@@ -144,9 +159,11 @@ exports.CoffeeMill = class CoffeeMill
     )
     .complete(self.test)
     .start()
+    return
   
   compress: (code)->
     uglify.ast_squeeze uglify.ast_mangle parser.parse code
+    return
   
   test: =>
     self = @
@@ -169,4 +186,5 @@ exports.CoffeeMill = class CoffeeMill
         @next()
       )
     ).start()
+    return
     

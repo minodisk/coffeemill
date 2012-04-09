@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 (function() {
-  var CoffeeMill, arg, argv, coffeemill, compress, dstDir, flag, srcDir, testDir, _i, _len;
+  var CoffeeMill, arg, argv, bare, coffeemill, compress, dstDir, flag, joinFile, srcDir, testDir, _i, _len;
   CoffeeMill = require('../lib/coffeemill').CoffeeMill;
   coffeemill = new CoffeeMill();
   argv = process.argv;
@@ -27,6 +27,14 @@
       case '--compress':
         compress = true;
         break;
+      case '-b':
+      case '--bare':
+        bare = true;
+        break;
+      case '-j':
+      case '--join':
+        flag = 'j';
+        break;
       default:
         switch (flag) {
           case 's':
@@ -37,8 +45,10 @@
             break;
           case 't':
             testDir = arg;
+          case 'j':
+            joinFile = arg;
         }
     }
   }
-  return coffeemill.grind(srcDir, dstDir, testDir, compress);
+  console.log(coffeemill.grind(srcDir, dstDir, testDir, compress, bare, joinFile));
 })();
