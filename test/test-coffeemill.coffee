@@ -1,5 +1,3 @@
-require 'nodeunit'
-
 coffeemill = require '../lib/coffeemill'
 {Relay} = require 'relay'
 path = require 'path'
