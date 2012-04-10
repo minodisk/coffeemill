@@ -19,7 +19,7 @@
     "coffee-script":">=1.2.0",
     "uglify-js"    :">=1.1.1",
     "relay"        :">=0.1.4",
-    "nodeunit"     :">=0.6.2"
+    "nodeunit"     :">=0.6.2",
     "colors"       :">=0.6.0"
   },
   "bin"         :{
