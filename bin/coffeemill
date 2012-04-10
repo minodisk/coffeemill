@@ -1,54 +1,76 @@
 #!/usr/bin/env node
-(function() {
-  var CoffeeMill, arg, argv, bare, coffeemill, compress, dstDir, flag, joinFile, srcDir, testDir, _i, _len;
-  CoffeeMill = require('../lib/coffeemill').CoffeeMill;
-  coffeemill = new CoffeeMill();
-  argv = process.argv;
-  for (_i = 0, _len = argv.length; _i < _len; _i++) {
-    arg = argv[_i];
-    switch (arg) {
-      case '-v':
-      case '--version':
-        console.log(CoffeeMill.version());
-        return;
-      case '-h':
-      case '--help':
-        console.log(CoffeeMill.help());
-        return;
-      case '-o':
-      case '--out':
-        flag = 'o';
-        break;
-      case '-t':
-      case '--test':
-        flag = 't';
-        break;
-      case '-c':
-      case '--compress':
-        compress = true;
-        break;
-      case '-b':
-      case '--bare':
-        bare = true;
-        break;
-      case '-j':
-      case '--join':
-        flag = 'j';
-        break;
-      default:
-        switch (flag) {
-          case 's':
-            srcDir = arg;
-            break;
-          case 'o':
-            dstDir = arg;
-            break;
-          case 't':
-            testDir = arg;
-          case 'j':
-            joinFile = arg;
-        }
-    }
+
+var arg, argv, bare, coffeemill, compress, output, flag, join, input, silent, test, _i, _len;
+coffeemill = require('../lib/coffeemill');
+argv = process.argv;
+for (_i = 2, _len = argv.length; _i < _len; _i++) {
+  arg = argv[_i];
+  switch (arg) {
+    case '-v':
+    case '--version':
+      console.log(coffeemill.version());
+      return;
+    case '-h':
+    case '--help':
+      console.log(coffeemill.help());
+      return;
+    case '-o':
+    case '--out':
+      flag = 'o';
+      break;
+    case '-t':
+    case '--test':
+      flag = 't';
+      break;
+    case '-j':
+    case '--join':
+      flag = 'j';
+      break;
+    case '-c':
+    case '--compress':
+      compress = true;
+      break;
+    case '-b':
+    case '--bare':
+      bare = true;
+      break;
+    case '-s':
+    case '--silent':
+      silent = true;
+      break;
+    case '-bc':
+    case '-cb':
+      bare = true;
+      compress = true;
+      break;
+    case '-bcs':
+    case '-bsc':
+    case '-cbs':
+    case '-csb':
+    case '-sbc':
+    case '-scb':
+      bare = true;
+      compress = true;
+      silent = true;
+      break;
+    default:
+      switch (flag) {
+        case 'o':
+          output = arg;
+          flag = null;
+          break;
+        case 't':
+          test = arg;
+          flag = null;
+          break;
+        case 'j':
+          join = arg;
+          flag = null;
+          break;
+        default:
+          input = arg;
+          break;
+      }
   }
-  console.log(coffeemill.grind(srcDir, dstDir, testDir, compress, bare, joinFile));
-})();
+}
+coffeemill.grind(input, output, test, join, bare, compress, silent);

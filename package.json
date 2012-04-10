@@ -1,8 +1,8 @@
 {
   "name"        :"coffeemill",
-  "version"     :"0.2.1",
+  "version"     :"0.2.2",
   "description" :"Compiles CoffeeScript with some options automatically, when something changes in watching directory.",
-  "tags"        :["auto", "watch", "coffee", "compile", "compress", "shrink"],
+  "tags"        :["auto", "watch", "coffee", "compile", "compress", "shrink", "minimize"],
   "author"      :{
     "name" :"Daisuke MINO",
     "email":"daisuke.mino@gmail.com"
@@ -20,6 +20,7 @@
     "uglify-js"    :">=1.1.1",
     "relay"        :">=0.1.4",
     "nodeunit"     :">=0.6.2"
+    "colors"       :">=0.6.0"
   },
   "bin"         :{
     "coffeemill":"./bin/coffeemill"
