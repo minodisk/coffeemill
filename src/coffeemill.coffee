@@ -23,8 +23,8 @@ stdout = (prefix, prefixColor, log)->
   console.log "#{prefix[prefixColor].inverse} #{timeStamp().grey} #{log}"
 
 exports.version = ->
-  package = JSON.parse fs.readFileSync path.join(__dirname, '../package.json'), 'utf8'
-  package.version
+  pkg = JSON.parse fs.readFileSync path.join(__dirname, '../package.json'), 'utf8'
+  pkg.version
 
 exports.help = ->
   """
@@ -41,18 +41,16 @@ exports.help = ->
   Argument: source directory (src)
   """
 
-###
-opts =
-  input:String
-  output:String
-  test:String
-  command:String
-  join:Boolean
-  bare:Boolean
-  minify:Boolean
-  silent:Boolean
-callback:Function
-###
+#opts =
+#  input:String
+#  output:String
+#  test:String
+#  command:String
+#  join:Boolean
+#  bare:Boolean
+#  minify:Boolean
+#  silent:Boolean
+#callback:Function
 exports.grind = (opts, callback)->
   unless opts.input? then opts.input = 'src'
   unless opts.output? then opts.output = 'lib'
