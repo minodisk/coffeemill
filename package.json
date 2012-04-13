@@ -1,6 +1,6 @@
 {
   "name"        :"coffeemill",
-  "version"     :"0.2.2",
+  "version"     :"0.2.3",
   "description" :"Compiles CoffeeScript with some options automatically, when something changes in watching directory.",
   "tags"        :["auto", "watch", "coffee", "compile", "compress", "shrink", "minimize"],
   "author"      :{
