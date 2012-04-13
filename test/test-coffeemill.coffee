@@ -33,7 +33,11 @@ pickUpAfter = ->
 exports.direct =
 
   'normal': (test)->
-    coffeemill.grind INPUT, OUTPUT, null, null, false, false, true, ->
+    coffeemill.grind {
+      input : INPUT
+      output: OUTPUT
+      silent: true
+    }, ->
       fs.readFile path.join(OUTPUT, 'dummy.js'), 'utf8', (err, data)->
         test.strictEqual err, null
         test.strictEqual data, """
@@ -48,7 +52,12 @@ exports.direct =
         test.done()
 
   'bare': (test)->
-    coffeemill.grind INPUT, OUTPUT, null, null, true, false, true, ->
+    coffeemill.grind {
+      input : INPUT
+      output: OUTPUT
+      bare  : true
+      silent: true
+    }, ->
       fs.readFile path.join(OUTPUT, 'dummy.js'), 'utf8', (err, data)->
         test.strictEqual err, null
         test.strictEqual data, """
@@ -60,7 +69,12 @@ exports.direct =
         test.done()
 
   'compress': (test)->
-    coffeemill.grind INPUT, OUTPUT, null, null, false, true, true, ->
+    coffeemill.grind {
+      input : INPUT
+      output: OUTPUT
+      minify: true
+      silent: true
+    }, ->
       fs.readFile path.join(OUTPUT, 'dummy.min.js'), 'utf8', (err, data)->
         test.strictEqual err, null
         test.strictEqual data, """

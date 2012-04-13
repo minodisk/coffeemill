@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
-var arg, argv, bare, coffeemill, compress, output, flag, join, input, silent, test, _i, _len;
+var arg, argv, coffeemill, flag, opts, _i, _len;
 coffeemill = require('../lib/coffeemill');
 argv = process.argv;
+opts = {};
 for (_i = 2, _len = argv.length; _i < _len; _i++) {
   arg = argv[_i];
   switch (arg) {
@@ -22,55 +23,63 @@ for (_i = 2, _len = argv.length; _i < _len; _i++) {
     case '--test':
       flag = 't';
       break;
+    case '-c':
+    case '--command':
+      flag = 'c';
+      break;
     case '-j':
     case '--join':
       flag = 'j';
       break;
-    case '-c':
-    case '--compress':
-      compress = true;
+    case '-m':
+    case '--minify':
+      opts.minify = true;
       break;
     case '-b':
     case '--bare':
-      bare = true;
+      opts.bare = true;
       break;
     case '-s':
     case '--silent':
-      silent = true;
+      opts.silent = true;
       break;
-    case '-bc':
-    case '-cb':
-      bare = true;
-      compress = true;
+    case '-bm':
+    case '-mb':
+      opts.bare = true;
+      opts.minify = true;
       break;
-    case '-bcs':
-    case '-bsc':
-    case '-cbs':
-    case '-csb':
-    case '-sbc':
-    case '-scb':
-      bare = true;
-      compress = true;
-      silent = true;
+    case '-bms':
+    case '-bsm':
+    case '-mbs':
+    case '-msb':
+    case '-sbm':
+    case '-smb':
+      opts.bare = true;
+      opts.minify = true;
+      opts.silent = true;
       break;
     default:
       switch (flag) {
         case 'o':
-          output = arg;
+          opts.output = arg;
           flag = null;
           break;
         case 't':
-          test = arg;
+          opts.test = arg;
+          flag = null;
+          break;
+        case 'c':
+          opts.command = arg;
           flag = null;
           break;
         case 'j':
-          join = arg;
+          opts.join = arg;
           flag = null;
           break;
         default:
-          input = arg;
+          opts.input = arg;
           break;
       }
   }
 }
-coffeemill.grind(input, output, test, join, bare, compress, silent);
+coffeemill.grind(opts);

@@ -29,35 +29,44 @@ exports.version = ->
 exports.help = ->
   """
   Usage   : coffeemill [-o output_dir] [-t test_dir] [src_dir]
-  Options : -o, --output [DIR] set the output directory for compiled JavaScript (lib)
-            -t, --test [DIR]   set the test directory (test)
-            -c, --compress     compress the compiled JavaScript
-            -b, --bare         compile without a top-level function wrapper
-            -j, --join [FILE]  concatenate the source CoffeeScript before compiling
-            -h, --help         display this help message
-            -v, --version      display the version number
+  Options : -v, --version             display the version number
+            -h, --help                display this help message
+            -s, --silent              without displaying log
+            -j, --join [FILE]         concatenate the source CoffeeScript before compiling
+            -b, --bare                compile without a top-level function wrapper
+            -m, --minify              minify the compiled JavaScript
+            -o, --output [DIR]        set the output directory for compiled JavaScript (lib)
+            -t, --test [DIR]          set the test directory of nodeunit
+            -c, --command '[COMMAND]' run command after all processing is finished
   Argument: source directory (src)
   """
 
-exports.grind = (input = 'src', output = 'lib', test = null, join = null, bare = false, compress = false, silent = false, callback = null)->
-  if silent then stdout = ->
-  opts =
-    requested: false
-    input    : input
-    output   : output
-    test     : test
-    join     : join
-    bare     : bare
-    compress : compress
-    silent   : silent
-    callback : callback
+###
+opts =
+  input:String
+  output:String
+  test:String
+  command:String
+  join:Boolean
+  bare:Boolean
+  minify:Boolean
+  silent:Boolean
+callback:Function
+###
+exports.grind = (opts, callback)->
+  unless opts.input? then opts.input = 'src'
+  unless opts.output? then opts.output = 'lib'
+  if opts.silent then stdout = ->
+  opts.requested = false
+  opts.callback = callback
   info """
     input directory : #{String(opts.input).bold}
     output directory: #{String(opts.output).bold}
     test directory  : #{String(opts.test).bold}
+    command         : #{String(opts.command).bold}
     join files to   : #{String(opts.join).bold}
     bare            : #{String(opts.bare).bold}
-    compress        : #{String(opts.compress).bold}
+    minify          : #{String(opts.minify).bold}
     silent          : #{String(opts.silent).bold}
     """
   Relay.serial(
@@ -147,16 +156,16 @@ startCompile = (opts)->
                 { path: "node/#{@local.basename}.js", code: node }
                 { path: "browser/#{@local.basename}.js", code: browser }
               ]
-              if opts.compress
-                files.push { path: "browser/#{@local.basename}.min.js", code: compress browser }
+              if opts.minify
+                files.push { path: "browser/#{@local.basename}.min.js", code: minify browser }
               @next files
             else
               code = coffee.compile code, compileOpts
               files = [
                 { path: "#{@local.basename}.js", code: code }
               ]
-              if opts.compress
-                files.push { path: "#{@local.basename}.min.js", code: compress code }
+              if opts.minify
+                files.push { path: "#{@local.basename}.min.js", code: minify code }
               @next files
         )
         Relay.each(
@@ -185,34 +194,54 @@ startCompile = (opts)->
   .complete(->
     if opts.test?
       test opts
+    else if opts.command?
+      runCommand opts
     else
       opts.callback?()
   )
   .start()
   return
 
-compress = (code)->
+minify = (code)->
   uglify.gen_code uglify.ast_squeeze uglify.ast_mangle parser.parse code
 
 test = (opts)->
-  Relay.serial(
-    Relay.func(->
-      fs.stat opts.test, @next
-    )
-    Relay.func((err, stats)->
-      unless err?
-        info "start testing".cyan.bold
-        nodeunit = spawn 'nodeunit', [opts.test]
-        nodeunit.stderr.setEncoding 'utf8'
-        nodeunit.stderr.on 'data', (data)->
-          error data.replace(/^\s*/, '').replace(/\s*$/, '')
-        nodeunit.stdout.setEncoding 'utf8'
-        nodeunit.stdout.on 'data', (data)->
-          info data.replace(/^\s*/, '').replace(/\s*$/, '')
-        nodeunit.on 'exit', (code)->
-          info "complete testing".cyan.bold
+  Relay.func(->
+    info "start testing".cyan.bold
+    nodeunit = spawn 'nodeunit', [opts.test]
+    nodeunit.stderr.setEncoding 'utf8'
+    nodeunit.stderr.on 'data', (data)->
+      error data.replace(/^\s*/, '').replace(/\s*$/, '')
+    nodeunit.stdout.setEncoding 'utf8'
+    nodeunit.stdout.on 'data', (data)->
+      info data.replace(/^\s*/, '').replace(/\s*$/, '')
+    nodeunit.on 'exit', (code)=>
+      info "complete testing".cyan.bold
       @next()
-    )
+  )
+  .complete(->
+    if opts.command?
+      runCommand opts
+    else
+      opts.callback?()
+  )
+  .start()
+  return
+
+runCommand = (opts)->
+  Relay.func(->
+    info "#{'running command'.cyan.bold}: #{opts.command.bold}"
+    commands = opts.command.split /\s+/
+    nodeunit = spawn commands.shift(), commands
+    nodeunit.stderr.setEncoding 'utf8'
+    nodeunit.stderr.on 'data', (data)->
+      error data.replace(/^\s*/, '').replace(/\s*$/, '')
+    nodeunit.stdout.setEncoding 'utf8'
+    nodeunit.stdout.on 'data', (data)->
+      info data.replace(/^\s*/, '').replace(/\s*$/, '')
+    nodeunit.on 'exit', (code)=>
+      info "complete running command".cyan.bold
+      @next()
   )
   .complete(->
     opts.callback?()

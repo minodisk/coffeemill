@@ -4,7 +4,7 @@
   "description" :"Compiles CoffeeScript with some options automatically, when something changes in watching directory.",
   "tags"        :["auto", "watch", "coffee", "compile", "compress", "shrink", "minimize"],
   "author"      :{
-    "name" :"Daisuke MINO",
+    "name" :"Daisuke Mino",
     "email":"daisuke.mino@gmail.com"
   },
   "repository"  :{
