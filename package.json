@@ -1,6 +1,6 @@
 {
   "name"        :"coffeemill",
-  "version"     :"0.2.5",
+  "version"     :"0.2.8",
   "description" :"Compiles CoffeeScript with some options automatically, when something changes in watching directory.",
   "tags"        :["auto", "watch", "coffee", "compile", "compress", "shrink", "minimize"],
   "author"      :{
@@ -16,11 +16,11 @@
   ],
   "license"     :"MIT",
   "dependencies":{
-    "coffee-script":">=1.2.0",
-    "uglify-js"    :">=1.1.1",
-    "relay"        :">=0.1.4",
-    "nodeunit"     :">=0.6.2",
-    "colors"       :">=0.6.0"
+    "coffee-script":"1.2.0",
+    "uglify-js"    :"1.2.6",
+    "relay"        :"0.1.4",
+    "nodeunit"     :"0.7.4",
+    "colors"       :"0.6.0"
   },
   "bin"         :{
     "coffeemill":"./bin/coffeemill"
