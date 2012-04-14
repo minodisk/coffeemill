@@ -139,10 +139,9 @@ startCompile = (opts)->
           if err?
             @skip()
           else
-            compileOpts =
-              bare: opts.bare
-            if join?
-              compileOpts.join = @join
+            compileOpts = {}
+            if opts.bare then compileOpts.bare = opts.bare
+            if opts.join then compileOpts.join = opts.join
             if R_ENV.test code
               node = code.replace R_ENV, (matched, $1, $2, offset, source)->
                 if $2? then $2 else ''
