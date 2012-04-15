@@ -388,7 +388,7 @@ minify = (code)->
   uglify.gen_code uglify.ast_squeeze(uglify.ast_mangle(parser.parse(code)))
 
 beautify = (code)->
-  uglify.gen_code uglify.ast_squeeze(parser.parse(code), { make_seqs: false }),
+  uglify.gen_code parser.parse(code),
     beautify: true
     indent_start: 0
     indent_level: 2

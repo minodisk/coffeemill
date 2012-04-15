@@ -1,6 +1,12 @@
 # CoffeeMill
 
-Compiles CoffeeScript with some options automatically, when something changes in watching directory.
+Compile CoffeeScript automatically, when something changes in watching directory.
+
+* Watches deep directory recursively.
+* Concatenate CoffeeScript files into each JavaScript files or one JavaScript file with resolving dependency.
+* Minify JavaScript.
+* Running test after compiling.
+* Running command at the end of the flow.
 
 ## Installation
 
@@ -10,13 +16,13 @@ Compiles CoffeeScript with some options automatically, when something changes in
 
     $ coffeemill
 
-When watching directory is 'source'
+Set input directory 'source'.
 
     $ coffeemill source
 
-You can use some options.
+Set output directory 'dst', test directory 'test', input directory 'source', and minifying.
 
-    $ coffeemill -o js -t tests -c source
+    $ coffeemill -o dst -t tests -m source
 
 * `-v, --version` : Display the version number.
 * `-h, --help` : Display this help message.
@@ -27,7 +33,3 @@ You can use some options.
 * `-o, --output [DIR]` : Write out all compiled JavaScript files into the specified directory. Default is `lib`.
 * `-t, --test [DIR]` : Run all test JavaScript or CoffeeScript files with [nodeunit](https://github.com/caolan/nodeunit) in the specified directory.
 * `-c, --command '[COMMAND]'` : Run command after all processing is finished.
-
-## TODO
-
-* Add '-p', '--project' option. Create project automatically.
