@@ -123,6 +123,7 @@ getFiles = (dir, callback)->
       else
         @next files
     )
+    # Run each serially not to break file order.
     Relay.each(
       Relay.serial(
         Relay.func((file)->
@@ -143,7 +144,7 @@ getFiles = (dir, callback)->
           @global.files = @global.files.concat files
           @next()
         )
-      )
+      ), true
     )
   )
   .complete(->
@@ -263,6 +264,10 @@ startCompile = (opts)->
           Relay.func(->
             # sort on dependency
             details = @global.details
+#            for detail in details
+#              console.log detail.file
+#            console.log '----------------------------'
+
             sorted = []
             counter = 0
             while i = details.length
@@ -283,6 +288,8 @@ startCompile = (opts)->
               tmp.reverse()
               sorted = sorted.concat tmp
             details = sorted
+#            for detail in details
+#              console.log detail.file
 
             code = ''
             if opts.bare?
