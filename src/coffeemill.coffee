@@ -81,24 +81,45 @@ startWatch = (opts, callback)->
   dirs = [opts.input]
   if opts.test then dirs.push opts.test
   Relay.each(
-    Relay.serial(
-      Relay.func((dir)->
-        @local.dir = dir
-        fs.stat dir, @next
-      )
-      Relay.func((err, stats)->
-        unless err?
-          info "start watching directory: #{String(@local.dir).bold}"
-          fs.watch @local.dir, (event, filename)->
+    Relay.func((dir)->
+      watch dir, opts, @next
+    )
+  )
+  .complete(callback)
+  .start dirs
+  return
+
+watch = (dir, opts, callback)->
+  Relay.serial(
+    Relay.func(->
+      fs.stat dir, @next
+    )
+    Relay.func((err, stats)->
+      if err?
+        @skip()
+      else
+        unless stats.isDirectory()
+          @skip()
+        else
+          info "start watching directory: #{String(dir).bold}"
+          fs.watch dir, (event, filename)->
             onDirChanged opts
-        @next()
+          fs.readdir dir, @next
+    )
+    Relay.func((err, files)->
+      if err?
+        @skip()
+      else
+        @next files
+    )
+    Relay.each(
+      Relay.func((file)->
+        watch path.join(dir, file), opts, @next
       )
     )
   )
-  .complete(->
-    callback?()
-  )
-  .start dirs
+  .complete(callback)
+  .start()
   return
 
 onDirChanged = (opts)->
