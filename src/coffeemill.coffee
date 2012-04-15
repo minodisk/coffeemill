@@ -111,6 +111,110 @@ onDirChanged = (opts)->
     ), 1000
   return
 
+getFiles = (dir, callback)->
+  Relay.serial(
+    Relay.func(->
+      @global.files = []
+      fs.readdir dir, @next
+    )
+    Relay.func((err, files)->
+      if err?
+        @skip()
+      else
+        @next files
+    )
+    Relay.each(
+      Relay.serial(
+        Relay.func((file)->
+          @local.file = path.join dir, file
+          fs.stat @local.file, @next
+        )
+        Relay.func((err, stats)->
+          if err?
+            @skip()
+          else if stats.isDirectory()
+            getFiles @local.file, @next
+          else if stats.isFile()
+            @next [@local.file]
+          else
+            @skip()
+        )
+        Relay.func((files)->
+          @global.files = @global.files.concat files
+          @next()
+        )
+      )
+    )
+  )
+  .complete(->
+    callback @global.files
+  )
+  .start()
+
+write = (filename, data, callback)->
+  Relay.serial(
+    Relay.func(->
+      dirs = filename.split '/'
+      @global.filename = ''
+      @next dirs
+    )
+    Relay.each(
+      Relay.func((dir, i, dirs)->
+        @global.filename = path.join @global.filename, dir
+        if i isnt dirs.length - 1
+          fs.mkdir @global.filename, @next
+        else
+          fs.writeFile @global.filename, data, @next
+      ), true
+    )
+  )
+  .complete(callback)
+  .start()
+
+compile = (code, opts, filepath, callback)->
+  Relay.serial(
+    Relay.func(->
+      compileOpts = {}
+      if opts.bare then compileOpts.bare = opts.bare
+      if R_ENV.test code
+        node = code.replace R_ENV, (matched, $1, $2, offset, source)->
+          if $2? then $2 else ''
+        node = coffee.compile node, compileOpts
+        browser = code.replace R_ENV, (matched, $1, $2, offset, source)->
+          if $1? then $1 else ''
+        browser = coffee.compile browser, compileOpts
+        details = [
+          { path: "node/#{filepath}.js", code: beautify node }
+          { path: "browser/#{filepath}.js", code: beautify browser }
+        ]
+        if opts.minify
+          details.push { path: "browser/#{filepath}.min.js", code: minify browser }
+        @next details
+      else
+        code = coffee.compile code, compileOpts
+        details = [
+          { path: "#{filepath}.js", code: beautify code }
+        ]
+        if opts.minify
+          details.push { path: "#{filepath}.min.js", code: minify code }
+        @next details
+    )
+    Relay.each(
+      Relay.serial(
+        Relay.func((detail)->
+          @local.filename = path.join opts.output, detail.path
+          write @local.filename, detail.code, @next
+        )
+        Relay.func(->
+          info "write file: #{String(@local.filename).bold}"
+          @next()
+        )
+      )
+    )
+  )
+  .complete(callback)
+  .start()
+
 startCompile = (opts)->
   Relay.serial(
     Relay.func(->
@@ -121,68 +225,121 @@ startCompile = (opts)->
       if err?
         error "'#{opts.output}' does'nt exist"
       else
-        fs.readdir opts.input, @next
+        getFiles opts.input, @next
     )
-    Relay.func((err, files)->
-      if err?
-        error err
-      else
-        @next files
-    )
-    Relay.each(
-      Relay.serial(
-        Relay.func((file)->
-          @local.basename = path.basename file, path.extname(file)
-          fs.readFile path.join(opts.input, file), 'utf8', @next
-        )
-        Relay.func((err, code)->
-          if err?
-            @skip()
-          else
-            compileOpts = {}
-            if opts.bare then compileOpts.bare = opts.bare
-            if opts.join then compileOpts.join = opts.join
-            if R_ENV.test code
-              node = code.replace R_ENV, (matched, $1, $2, offset, source)->
-                if $2? then $2 else ''
-              node = coffee.compile node, compileOpts
-              browser = code.replace R_ENV, (matched, $1, $2, offset, source)->
-                if $1? then $1 else ''
-              browser = coffee.compile browser, compileOpts
-              files = [
-                { path: "node/#{@local.basename}.js", code: node }
-                { path: "browser/#{@local.basename}.js", code: browser }
-              ]
-              if opts.minify
-                files.push { path: "browser/#{@local.basename}.min.js", code: minify browser }
-              @next files
+    do ->
+      if opts.join?
+        Relay.serial(
+          Relay.func((files)->
+            @global.details = []
+            @next files
+          )
+          Relay.each(
+            Relay.serial(
+              Relay.func((file)->
+                @local.detail =
+                  file: file
+                fs.readFile @local.detail.file, 'utf8', @next
+              )
+              Relay.func((err, code)->
+                if err?
+                  @skip()
+                else
+                  @local.detail.code = code
+                  tokens = coffee.tokens @local.detail.code
+                  for token, i in tokens
+                    switch token[0]
+                      when 'CLASS'
+                        unless @local.detail.class?
+                          @local.detail.class = tokens[i + 1][1]
+                      when 'EXTENDS'
+                        unless @local.detail.extends?
+                          @local.detail.extends = tokens[i + 1][1]
+                  @global.details.push @local.detail
+                  @next()
+              )
+            )
+          )
+          Relay.func(->
+            # sort on dependency
+            details = @global.details
+            sorted = []
+            counter = 0
+            while i = details.length
+              if counter++ is 100
+                throw new Error "Can't resolve dependency."
+              tmp = []
+              while i--
+                detail = details[i]
+                unless detail.extends?
+                  details.splice i, 1
+                  tmp.push detail
+                else
+                  for d in sorted
+                    if detail.extends is d.class
+                      details.splice i, 1
+                      tmp.push detail
+                      break
+              tmp.reverse()
+              sorted = sorted.concat tmp
+            details = sorted
+
+            code = ''
+            if opts.bare?
+              for detail in details
+                code += detail.code
             else
-              code = coffee.compile code, compileOpts
-              files = [
-                { path: "#{@local.basename}.js", code: code }
-              ]
-              if opts.minify
-                files.push { path: "#{@local.basename}.min.js", code: minify code }
-              @next files
+              for detail in details
+                code += "#{detail.code}\n"
+
+            compile code, opts, opts.join, @next
+          )
         )
+      else
         Relay.each(
           Relay.serial(
             Relay.func((file)->
-              @local.filename = path.join opts.output, file.path
-              fs.writeFile @local.filename, file.code, @next
+              basename = path.basename file, path.extname(file)
+              tmp = file.split '/'
+              tmp.shift()
+              tmp.pop()
+              tmp.push basename
+              @local.path = path.join.apply null, tmp
+              fs.readFile file, 'utf8', @next
             )
-            Relay.func((err)->
+            Relay.func((err, code)->
               if err?
-                error err
                 @skip()
               else
-                info "write file: #{String(@local.filename).bold}"
-                @next()
+                compile code, opts, @local.path, @next
+
+#                compileOpts = {}
+#                if opts.bare then compileOpts.bare = opts.bare
+#                if R_ENV.test code
+#                  node = code.replace R_ENV, (matched, $1, $2, offset, source)->
+#                    if $2? then $2 else ''
+#                  node = coffee.compile node, compileOpts
+#                  browser = code.replace R_ENV, (matched, $1, $2, offset, source)->
+#                    if $1? then $1 else ''
+#                  browser = coffee.compile browser, compileOpts
+#                  details = [
+#                    { path: "node/#{@local.path}.js", code: node }
+#                    { path: "browser/#{@local.path}.js", code: browser }
+#                  ]
+#                  if opts.minify
+#                    details.push { path: "browser/#{@local.path}.min.js", code: minify browser }
+#                  @next details
+#                else
+#                  code = coffee.compile code, compileOpts
+#                  details = [
+#                    { path: "#{@local.path}.js", code: code }
+#                  ]
+#                  if opts.minify
+#                    details.push { path: "#{@local.path}.min.js", code: minify code }
+#                  @next details
             )
           )
         )
-      )
-    )
     Relay.func(->
       info "complete compiling".cyan.bold
       @next()
@@ -200,7 +357,13 @@ startCompile = (opts)->
   return
 
 minify = (code)->
-  uglify.gen_code uglify.ast_squeeze uglify.ast_mangle parser.parse code
+  uglify.gen_code uglify.ast_squeeze(uglify.ast_mangle(parser.parse(code)))
+
+beautify = (code)->
+  uglify.gen_code uglify.ast_squeeze(parser.parse(code), { make_seqs: false }),
+    beautify: true
+    indent_start: 0
+    indent_level: 2
 
 test = (opts)->
   Relay.func(->
