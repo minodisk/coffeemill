@@ -297,15 +297,28 @@ startCompile = (opts)->
               tmp = []
               while i--
                 detail = details[i]
+                
+                displace = false
                 unless detail.extends?
-                  details.splice i, 1
-                  tmp.push detail
+                  displace = true
                 else
                   for d in sorted
                     if detail.extends is d.class
-                      details.splice i, 1
-                      tmp.push detail
+                      displace = true
                       break
+                  unless displace
+                    find = false
+                    for d in details
+                      if detail.extends is d.class
+                        find = true
+                        break
+                    unless find
+                      displace = true
+
+                if displace
+                  details.splice i, 1
+                  tmp.push detail
+
               tmp.reverse()
               sorted = sorted.concat tmp
             details = sorted
