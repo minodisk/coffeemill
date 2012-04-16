@@ -280,7 +280,7 @@ startCompile = (opts)->
                           @local.detail.depends = tokens[i + 1][1]
                   @next()
               )
-            )
+            ), true
           )
           Relay.func(->
             # sort on dependency
