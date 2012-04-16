@@ -1,6 +1,6 @@
 {
   "name"        :"coffeemill",
-  "version"     :"0.3.8",
+  "version"     :"0.3.9",
   "description" :"CoffeeScript project builder",
   "tags"        :["watch", "coffee", "compile", "compress", "minify", "concatenate"],
   "author"      :{
