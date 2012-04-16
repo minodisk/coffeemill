@@ -288,9 +288,9 @@ startCompile = (opts)->
             # sort on dependency
             details = @global.details
 
-            for detail in details
-              console.log detail.file
-            console.log '----------------------------'
+#            for detail in details
+#              console.log detail.file
+#            console.log '----------------------------'
 
             for detail in details
               internal = false
@@ -328,8 +328,8 @@ startCompile = (opts)->
               sorted = sorted.concat tmp
             details = sorted
 
-            for detail in details
-              console.log detail.file
+#            for detail in details
+#              console.log detail.file
 
             code = ''
             if opts.bare?
