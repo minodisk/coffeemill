@@ -259,8 +259,6 @@ startCompile = (opts)->
           Relay.each(
             Relay.serial(
               Relay.func((file)->
-                console.log 'pushing:', file
-
                 @local.detail =
                   file: file
                 @global.details.push @local.detail
