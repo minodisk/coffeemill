@@ -275,8 +275,8 @@ startCompile = (opts)->
                         unless @local.detail.class?
                           @local.detail.class = tokens[i + 1][1]
                       when 'EXTENDS'
-                        unless @local.detail.extends?
-                          @local.detail.extends = tokens[i + 1][1]
+                        unless @local.detail.depends?
+                          @local.detail.depends = tokens[i + 1][1]
                   @global.details.push @local.detail
                   @next()
               )
@@ -285,9 +285,20 @@ startCompile = (opts)->
           Relay.func(->
             # sort on dependency
             details = @global.details
+
 #            for detail in details
 #              console.log detail.file
 #            console.log '----------------------------'
+
+            for detail in details
+              internal = false
+              for d in details
+                if d isnt detail
+                  if detail.depends is d.class
+                    internal = true
+                    break
+              unless internal
+                detail.depends = null
 
             sorted = []
             counter = 0
@@ -297,23 +308,15 @@ startCompile = (opts)->
               tmp = []
               while i--
                 detail = details[i]
-                
+
                 displace = false
-                unless detail.extends?
+                unless detail.depends?
                   displace = true
                 else
                   for d in sorted
-                    if detail.extends is d.class
+                    if detail.depends is d.class
                       displace = true
                       break
-                  unless displace
-                    find = false
-                    for d in details
-                      if detail.extends is d.class
-                        find = true
-                        break
-                    unless find
-                      displace = true
 
                 if displace
                   details.splice i, 1
@@ -322,6 +325,7 @@ startCompile = (opts)->
               tmp.reverse()
               sorted = sorted.concat tmp
             details = sorted
+
 #            for detail in details
 #              console.log detail.file
 
