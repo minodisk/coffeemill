@@ -259,8 +259,11 @@ startCompile = (opts)->
           Relay.each(
             Relay.serial(
               Relay.func((file)->
+                console.log 'pushing:', file
+
                 @local.detail =
                   file: file
+                @global.details.push @local.detail
                 fs.readFile @local.detail.file, 'utf8', @next
               )
               Relay.func((err, code)->
@@ -277,7 +280,6 @@ startCompile = (opts)->
                       when 'EXTENDS'
                         unless @local.detail.depends?
                           @local.detail.depends = tokens[i + 1][1]
-                  @global.details.push @local.detail
                   @next()
               )
             )
@@ -286,9 +288,9 @@ startCompile = (opts)->
             # sort on dependency
             details = @global.details
 
-#            for detail in details
-#              console.log detail.file
-#            console.log '----------------------------'
+            for detail in details
+              console.log detail.file
+            console.log '----------------------------'
 
             for detail in details
               internal = false
@@ -326,8 +328,8 @@ startCompile = (opts)->
               sorted = sorted.concat tmp
             details = sorted
 
-#            for detail in details
-#              console.log detail.file
+            for detail in details
+              console.log detail.file
 
             code = ''
             if opts.bare?
