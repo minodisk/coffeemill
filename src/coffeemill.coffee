@@ -54,6 +54,9 @@ exports.help = ->
 exports.grind = (opts, callback)->
   unless opts.input? then opts.input = 'src'
   unless opts.output? then opts.output = 'lib'
+  path.normalize opts.input
+  path.normalize opts.output
+  if opts.test? then path.normalize opts.test
   if opts.silent then stdout = ->
   opts.requested = false
   opts.callback = callback
@@ -180,6 +183,7 @@ write = (filename, data, callback)->
       @global.filename = ''
       @next dirs
     )
+    # Run each serially not to break file order.
     Relay.each(
       Relay.func((dir, i, dirs)->
         @global.filename = path.join @global.filename, dir
@@ -345,11 +349,16 @@ startCompile = (opts)->
           Relay.serial(
             Relay.func((file)->
               basename = path.basename file, path.extname(file)
-              tmp = file.split '/'
-              tmp.shift()
-              tmp.pop()
-              tmp.push basename
-              @local.path = path.join.apply null, tmp
+              tmp = path.join file, '..', basename
+
+              input = opts.input.split '/'
+              tmp   = tmp.split '/'
+              p = []
+              i = tmp.length
+              while i-- and tmp[i] isnt input[i]
+                p.unshift tmp[i]
+              @local.path = p.join '/'
+
               fs.readFile file, 'utf8', @next
             )
             Relay.func((err, code)->
@@ -357,31 +366,6 @@ startCompile = (opts)->
                 @skip()
               else
                 compile code, opts, @local.path, @next
-
-#                compileOpts = {}
-#                if opts.bare then compileOpts.bare = opts.bare
-#                if R_ENV.test code
-#                  node = code.replace R_ENV, (matched, $1, $2, offset, source)->
-#                    if $2? then $2 else ''
-#                  node = coffee.compile node, compileOpts
-#                  browser = code.replace R_ENV, (matched, $1, $2, offset, source)->
-#                    if $1? then $1 else ''
-#                  browser = coffee.compile browser, compileOpts
-#                  details = [
-#                    { path: "node/#{@local.path}.js", code: node }
-#                    { path: "browser/#{@local.path}.js", code: browser }
-#                  ]
-#                  if opts.minify
-#                    details.push { path: "browser/#{@local.path}.min.js", code: minify browser }
-#                  @next details
-#                else
-#                  code = coffee.compile code, compileOpts
-#                  details = [
-#                    { path: "#{@local.path}.js", code: code }
-#                  ]
-#                  if opts.minify
-#                    details.push { path: "#{@local.path}.min.js", code: minify code }
-#                  @next details
             )
           )
         )
