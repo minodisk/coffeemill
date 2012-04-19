@@ -26,31 +26,6 @@ exports.version = ->
   pkg = JSON.parse fs.readFileSync path.join(__dirname, '../package.json'), 'utf8'
   pkg.version
 
-exports.help = ->
-  """
-  Usage   : coffeemill [-o output_dir] [-t test_dir] [src_dir]
-  Options : -v, --version             display the version number
-            -h, --help                display this help message
-            -s, --silent              without displaying log
-            -j, --join [FILE]         concatenate the source CoffeeScript before compiling
-            -b, --bare                compile without a top-level function wrapper
-            -m, --minify              minify the compiled JavaScript
-            -o, --output [DIR]        set the output directory for compiled JavaScript (lib)
-            -t, --test [DIR]          set the test directory of nodeunit
-            -c, --command '[COMMAND]' run command after all processing is finished
-  Argument: source directory (src)
-  """
-
-#opts =
-#  input:String
-#  output:String
-#  test:String
-#  command:String
-#  join:Boolean
-#  bare:Boolean
-#  minify:Boolean
-#  silent:Boolean
-#callback:Function
 exports.grind = (opts, callback)->
   unless opts.input? then opts.input = 'src'
   unless opts.output? then opts.output = 'lib'
@@ -63,11 +38,11 @@ exports.grind = (opts, callback)->
   info """
     input directory : #{String(opts.input).bold}
     output directory: #{String(opts.output).bold}
-    test directory  : #{String(opts.test).bold}
-    command         : #{String(opts.command).bold}
     join files to   : #{String(opts.join).bold}
-    bare            : #{String(opts.bare).bold}
     minify          : #{String(opts.minify).bold}
+    bare            : #{String(opts.bare).bold}
+    test directory  : #{String(opts.test).bold}
+    run             : #{String(opts.run).bold}
     silent          : #{String(opts.silent).bold}
     """
   Relay.serial(
@@ -377,7 +352,7 @@ startCompile = (opts)->
   .complete(->
     if opts.test?
       test opts
-    else if opts.command?
+    else if opts.run?
       runCommand opts
     else
       opts.callback?()
@@ -409,7 +384,7 @@ test = (opts)->
       @next()
   )
   .complete(->
-    if opts.command?
+    if opts.run?
       runCommand opts
     else
       opts.callback?()
@@ -419,8 +394,8 @@ test = (opts)->
 
 runCommand = (opts)->
   Relay.func(->
-    info "#{'running command'.cyan.bold}: #{opts.command.bold}"
-    commands = opts.command.split /\s+/
+    info "#{'running command'.cyan.bold}: #{opts.run.bold}"
+    commands = opts.run.split /\s+/
     nodeunit = spawn commands.shift(), commands
     nodeunit.stderr.setEncoding 'utf8'
     nodeunit.stderr.on 'data', (data)->

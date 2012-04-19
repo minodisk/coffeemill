@@ -1,85 +1,27 @@
 #!/usr/bin/env node
 
-var arg, argv, coffeemill, flag, opts, _i, _len;
+var arg, argv, coffeemill, commander, flag, opts, _i, _len;
+
 coffeemill = require('../lib/coffeemill');
-argv = process.argv;
-opts = {};
-for (_i = 2, _len = argv.length; _i < _len; _i++) {
-  arg = argv[_i];
-  switch (arg) {
-    case '-v':
-    case '--version':
-      console.log(coffeemill.version());
-      return;
-    case '-h':
-    case '--help':
-      console.log(coffeemill.help());
-      return;
-    case '-o':
-    case '--out':
-      flag = 'o';
-      break;
-    case '-t':
-    case '--test':
-      flag = 't';
-      break;
-    case '-c':
-    case '--command':
-      flag = 'c';
-      break;
-    case '-j':
-    case '--join':
-      flag = 'j';
-      break;
-    case '-m':
-    case '--minify':
-      opts.minify = true;
-      break;
-    case '-b':
-    case '--bare':
-      opts.bare = true;
-      break;
-    case '-s':
-    case '--silent':
-      opts.silent = true;
-      break;
-    case '-bm':
-    case '-mb':
-      opts.bare = true;
-      opts.minify = true;
-      break;
-    case '-bms':
-    case '-bsm':
-    case '-mbs':
-    case '-msb':
-    case '-sbm':
-    case '-smb':
-      opts.bare = true;
-      opts.minify = true;
-      opts.silent = true;
-      break;
-    default:
-      switch (flag) {
-        case 'o':
-          opts.output = arg;
-          flag = null;
-          break;
-        case 't':
-          opts.test = arg;
-          flag = null;
-          break;
-        case 'c':
-          opts.command = arg;
-          flag = null;
-          break;
-        case 'j':
-          opts.join = arg;
-          flag = null;
-          break;
-        default:
-          opts.input = arg;
-          break;
-      }
-  }
-}
-coffeemill.grind(opts);
+commander = require('commander');
+
+commander
+  .version(coffeemill.version())
+  .usage('[options]')
+  .option('-i, --input <dirname>', 'set the input directory of source CoffeeScript', 'src')
+  .option('-o, --output <dirname>', 'set the output directory of compiled JavaScript', 'lib')
+  .option('-j, --join <filename>', 'concatenate CoffeeScript files before compiling')
+  .option('-m, --minify', 'minify the compiled JavaScript')
+  .option('-b, --bare', 'compile without a top-level function wrapper')
+  .option('-t, --test <dirname>', 'set the test directory of nodeunit')
+  .option('-r, --run <command>', 'run command after all processing is finished')
+  .option('-s, --silent', 'without displaying any log');
+commander.on('--help', function () {
+  console.log('  Examples:');
+  console.log('');
+  console.log('    $ coffeemill');
+  console.log("    $ coffeemill -o scripts -j joined -c 'cat scripts/joined.js'");
+  console.log('');
+});
+commander.parse(process.argv);
+coffeemill.grind(commander);
