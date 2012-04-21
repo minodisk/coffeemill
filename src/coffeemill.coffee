@@ -5,6 +5,9 @@ coffee = require 'coffee-script'
 {parser, uglify} = require 'uglify-js'
 {Relay} = require 'relay'
 colors = require 'colors'
+jade = require 'jade'
+{Markdown} = require 'node-markdown'
+sorter = require 'sorter'
 
 R_ENV = /#if\s+BROWSER([\s\S]*?)(#else[\s\S]*?)?#endif/g
 
@@ -36,16 +39,32 @@ exports.grind = (opts, callback)->
   opts.requested = false
   opts.callback = callback
   info """
-    input directory : #{String(opts.input).bold}
-    output directory: #{String(opts.output).bold}
+    input dir       : #{String(opts.input).bold}
+    output dir      : #{String(opts.output).bold}
     join files to   : #{String(opts.join).bold}
     minify          : #{String(opts.minify).bold}
     bare            : #{String(opts.bare).bold}
+    docs output dir : #{String(opts.docs).bold}
+    docs template   : #{String(opts.template).bold}
     test directory  : #{String(opts.test).bold}
     run             : #{String(opts.run).bold}
     silent          : #{String(opts.silent).bold}
     """
   Relay.serial(
+    Relay.func(->
+      if opts.template?
+        fs.readFile opts.template, 'utf8', @next
+      else
+        @next()
+    )
+    Relay.func((err, template)->
+      if err?
+        throw err
+        @skip()
+      else
+        opts.compiler = jade.compile template, { pretty: true }
+      @next()
+    )
     Relay.func(->
       startWatch opts, @next
     )
@@ -151,26 +170,218 @@ getFiles = (dir, callback)->
   )
   .start()
 
-write = (filename, data, callback)->
+write = (filename, code, callback)->
   Relay.serial(
     Relay.func(->
       dirs = filename.split '/'
       @global.filename = ''
       @next dirs
     )
-    # Run each serially not to break file order.
     Relay.each(
-      Relay.func((dir, i, dirs)->
-        @global.filename = path.join @global.filename, dir
-        if i isnt dirs.length - 1
-          fs.mkdir @global.filename, @next
-        else
-          fs.writeFile @global.filename, data, @next
-      ), true
+      Relay.serial(
+        Relay.func((dir, i, dirs)->
+          filename = @global.filename = path.join @global.filename, dir
+          if i isnt dirs.length - 1
+            fs.mkdir filename, @next
+          else
+            fs.writeFile filename, code, @next
+        )
+        Relay.func((err)->
+          unless err?
+            info "write file: #{String(@global.filename).bold}"
+          @next()
+        )
+      )
     )
   )
-  .complete(callback)
+  .complete(->
+    callback?()
+  )
   .start()
+
+getFilepath = (filename, dir)->
+  basename = path.basename filename, path.extname(filename)
+  tmp = path.join filename, '..', basename
+  input = dir.split '/'
+  tmp   = tmp.split '/'
+  p = []
+  i = tmp.length
+  while i-- and tmp[i] isnt input[i]
+    p.unshift tmp[i]
+  p.join '/'
+
+getComment = (value)->
+  doc =
+    texts: []
+  for line in value.split /\n|\r\n?/
+    if ($ = line.match /^@(\w+)\s+(.*)?/) and (key = $[1])
+      unless doc[key] then doc[key] = []
+      switch key
+        when 'param', 'property'
+          if $ = $[2].match /^(\w+)\s+(\w+)\s+(.*)/
+            doc[key].push(
+              name: $[1]
+              type: $[2]
+              text: $[3]
+            )
+        when 'returns'
+          if $ = $[2].match /^(\w+)\s+(.*)/
+            doc[key] =
+              type: $[1]
+              text: $[2]
+        when 'type'
+          if $ = $[2].match /^(\w+)/
+            doc[key].push(
+              type: $[1]
+            )
+    else if line isnt ''
+      doc.texts.push line
+  doc.text = Markdown doc.texts.join '\n'
+  doc
+
+generateDoc = (code, opts, filepath, callback)->
+  if path.basename(filepath).charAt(0) is '_'
+    callback?()
+    return
+
+  head = {}
+  docs = []
+
+  indent = 0
+  param = false
+  idTokens = []
+  comment = null
+
+  tokens = coffee.tokens code
+  for token, i in tokens
+    [type, value] = token
+    token =
+      type : type
+      value: value
+
+    switch type
+      when 'INDENT'
+        indent++
+      when 'OUTDENT'
+        indent--
+      when 'PARAM_START'
+        param = true
+      when 'PARAM_END'
+        param = false
+
+    switch indent
+      when 0
+        switch type
+          when 'HERECOMMENT'
+            if value.charAt(0) is '*'
+              for key, value of getComment value.substr 1
+                head[key] = value
+
+          when 'IDENTIFIER'
+            idTokens.push token
+            switch prevToken?.type
+              when 'CLASS'
+                head.class = value
+              when 'EXTENDS'
+                head.extends = value
+
+      when 1
+        switch type
+          when 'HERECOMMENT'
+            if value.charAt(0) is '*'
+              comment = getComment value.substr 1
+
+          when 'IDENTIFIER'
+            unless param
+              doc =
+                static : prevToken.type is '@'
+                type   : 'property'
+                name   : value
+                private: value.charAt(0) is '_'
+                returns:
+                  type: 'void'
+              for key, value of comment
+                doc[key] = value
+              docs.push doc
+              comment = null
+          when '->', '=>'
+            doc.type = 'function'
+
+    if i is tokens.length - 1 and not head.class?
+      head.class = idTokens[idTokens.length - 1].value
+      for doc in docs
+        doc.static = true
+
+    prevToken = token
+
+  data =
+    head : head
+    static:
+      properties: []
+      methods   : []
+    constructor: null
+    member:
+      properties: []
+      methods   : []
+    toParamString: (param)->
+      if param?
+        params = []
+        for {name, type} in param
+          params.push "#{name}:#{type}"
+        params.join ', '
+      else
+        ''
+
+  for doc in docs
+    if doc.name is 'constructor'
+      doc.name = head.class
+      data.constructor = doc
+    else
+      obj = if doc.static then data.static else data.member
+      if doc.type is 'function'
+        obj.methods.push doc
+      else
+        obj.properties.push doc
+
+  sorter.dictSort data.static.properties, 'name'
+  sorter.dictSort data.static.methods, 'name'
+  sorter.dictSort data.member.properties, 'name'
+  sorter.dictSort data.member.methods, 'name'
+
+  Relay.serial(
+    Relay.func(->
+      @local.filename = path.join(opts.docs, "#{filepath}.html")
+      write @local.filename, opts.compiler(data), @next
+    )
+    Relay.func(->
+      @next()
+    )
+  )
+  .complete(->
+    callback?()
+  )
+  .start()
+
+generateIndexDoc = (filepaths, opts, callback)->
+  packages = {}
+  sorter.dictSort filepaths
+  for filepath in filepaths
+    unless path.basename(filepath).charAt(0) is '_'
+      package = filepath.split '/'
+      name = package.pop()
+      package = package.join('.')
+
+      unless packages[package]?
+        packages[package] = []
+      packages[package].push
+        name: name
+        url : "#{filepath}.html"
+
+  console.log packages
+  html = opts.compiler(
+    packages: packages
+  )
+  write path.join(opts.docs, 'index.html'), html, callback
 
 compile = (code, opts, filepath, callback)->
   Relay.serial(
@@ -207,7 +418,6 @@ compile = (code, opts, filepath, callback)->
           write @local.filename, detail.code, @next
         )
         Relay.func(->
-          info "write file: #{String(@local.filename).bold}"
           @next()
         )
       )
@@ -220,6 +430,7 @@ startCompile = (opts)->
   Relay.serial(
     Relay.func(->
       info "start compiling".cyan.bold
+      @global.filepaths = []
       fs.stat opts.output, @next
     )
     Relay.func((err, stats)->
@@ -257,6 +468,12 @@ startCompile = (opts)->
                       when 'EXTENDS'
                         unless @local.detail.depends?
                           @local.detail.depends = tokens[i + 1][1]
+
+                  if opts.compiler?
+                    filepath = getFilepath @local.detail.file, opts.input
+                    generateDoc code, opts, filepath
+                    @global.filepaths.push filepath
+
                   @next()
               )
             ), true
@@ -264,10 +481,6 @@ startCompile = (opts)->
           Relay.func(->
             # sort on dependency
             details = @global.details
-
-#            for detail in details
-#              console.log detail.file
-#            console.log '----------------------------'
 
             for detail in details
               internal = false
@@ -305,9 +518,6 @@ startCompile = (opts)->
               sorted = sorted.concat tmp
             details = sorted
 
-#            for detail in details
-#              console.log detail.file
-
             code = ''
             if opts.bare?
               for detail in details
@@ -323,17 +533,7 @@ startCompile = (opts)->
         Relay.each(
           Relay.serial(
             Relay.func((file)->
-              basename = path.basename file, path.extname(file)
-              tmp = path.join file, '..', basename
-
-              input = opts.input.split '/'
-              tmp   = tmp.split '/'
-              p = []
-              i = tmp.length
-              while i-- and tmp[i] isnt input[i]
-                p.unshift tmp[i]
-              @local.path = p.join '/'
-
+              @local.path = getFilepath(file, opts.input)
               fs.readFile file, 'utf8', @next
             )
             Relay.func((err, code)->
@@ -341,9 +541,15 @@ startCompile = (opts)->
                 @skip()
               else
                 compile code, opts, @local.path, @next
+                if opts.compiler?
+                  generateDoc code, opts, @local.path
+                  @global.filepaths.push @local.path
             )
           )
         )
+    Relay.func(->
+      generateIndexDoc @global.filepaths, opts, @next
+    )
     Relay.func(->
       info "complete compiling".cyan.bold
       @next()

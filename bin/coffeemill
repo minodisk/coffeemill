@@ -13,6 +13,8 @@ commander
   .option('-j, --join <filename>', 'concatenate CoffeeScript files before compiling')
   .option('-m, --minify', 'minify the compiled JavaScript')
   .option('-b, --bare', 'compile without a top-level function wrapper')
+  .option('-d, --docs <dirname>', 'set the output directory of compiled document HTML', 'docs')
+  .option('-T, --template <filename>', 'generate documents with jade')
   .option('-t, --test <dirname>', 'set the test directory of nodeunit')
   .option('-r, --run <command>', 'run command after all processing is finished')
   .option('-s, --silent', 'without displaying any log');
