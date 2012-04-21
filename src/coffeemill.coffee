@@ -62,7 +62,9 @@ exports.grind = (opts, callback)->
         throw err
         @skip()
       else
-        opts.compiler = jade.compile template, { pretty: true }
+        opts.compiler = jade.compile template,
+          filename: 'templates/docs.jade'
+          pretty  : true
       @next()
     )
     Relay.func(->
