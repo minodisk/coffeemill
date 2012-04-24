@@ -379,7 +379,6 @@ generateIndexDoc = (filepaths, opts, callback)->
         name: name
         url : "#{filepath}.html"
 
-  console.log packages
   html = opts.compiler(
     packages: packages
   )
@@ -473,7 +472,8 @@ startCompile = (opts)->
 
                   if opts.compiler?
                     filepath = getFilepath @local.detail.file, opts.input
-                    generateDoc code, opts, filepath
+                    if opts.docs? and opts.template?
+                      generateDoc code, opts, filepath
                     @global.filepaths.push filepath
 
                   @next()
@@ -544,13 +544,17 @@ startCompile = (opts)->
               else
                 compile code, opts, @local.path, @next
                 if opts.compiler?
-                  generateDoc code, opts, @local.path
+                  if opts.docs? and opts.template?
+                    generateDoc code, opts, @local.path
                   @global.filepaths.push @local.path
             )
           )
         )
     Relay.func(->
-      generateIndexDoc @global.filepaths, opts, @next
+      if opts.docs? and opts.template?
+        generateIndexDoc @global.filepaths, opts, @next
+      else
+        @next()
     )
     Relay.func(->
       info "complete compiling".cyan.bold
