@@ -365,22 +365,22 @@ generateDoc = (code, opts, filepath, callback)->
   .start()
 
 generateIndexDoc = (filepaths, opts, callback)->
-  packages = {}
+  pkgs = {}
   sorter.dictSort filepaths
   for filepath in filepaths
     unless path.basename(filepath).charAt(0) is '_'
-      package = filepath.split '/'
-      name = package.pop()
-      package = package.join('.')
+      pkg = filepath.split '/'
+      name = pkg.pop()
+      pkg = pkg.join('.')
 
-      unless packages[package]?
-        packages[package] = []
-      packages[package].push
+      unless pkgs[pkg]?
+        pkgs[pkg] = []
+      pkgs[pkg].push
         name: name
         url : "#{filepath}.html"
 
   html = opts.compiler(
-    packages: packages
+    pkgs: pkgs
   )
   write path.join(opts.docs, 'index.html'), html, callback
 
@@ -404,7 +404,10 @@ compile = (code, opts, filepath, callback)->
           details.push { path: "browser/#{filepath}.min.js", code: minify browser }
         @next details
       else
-        code = coffee.compile code, compileOpts
+        try
+          code = coffee.compile code, compileOpts
+        catch err
+          return error err.message
         details = [
           { path: "#{filepath}.js", code: beautify code }
         ]
