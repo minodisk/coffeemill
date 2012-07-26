@@ -539,6 +539,30 @@ startCompile = (opts)->
           Relay.serial(
             Relay.func((file)->
               @local.path = getFilepath(file, opts.input)
+              extension = file.match(/\.[a-z]+$/)?[0] or ""
+              root = process.cwd()
+
+              # Ignore '.*' files
+              if file.match(/\/\.[^\/]*$/)
+                return this.skip()
+
+              # Only compile '.coffee' files; everything else is copied
+              if not file.match(/\.coffee$/)
+                # Absolute paths
+                oldFileName = path.join(root, opts.input, @local.path + extension)
+                newFileName = path.join(root, opts.output, @local.path + extension)
+
+                # Copy it over
+                exec = require('child_process').exec
+                exec """
+                  mkdir -p $(dirname #{newFileName});
+                  cp \"#{oldFileName}\" \"#{newFileName}\";
+                """
+
+                # Print message
+                info("copy file: " + (String(path.join(opts.output, @local.path + extension)).bold))
+                return this.skip()
+
               fs.readFile file, 'utf8', @next
             )
             Relay.func((err, code)->
