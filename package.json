@@ -16,7 +16,7 @@
   },
   "license"     :"MIT",
   "dependencies":{
-    "commander"    :"0.6.0",
+    "commander"    :"1.0.0",
     "coffee-script":"1.2.0",
     "uglify-js"    :"1.2.6",
     "relay"        :"0.1.4",
