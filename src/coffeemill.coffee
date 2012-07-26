@@ -91,7 +91,11 @@ startWatch = (opts, callback)->
 watch = (dir, opts, callback)->
   Relay.serial(
     Relay.func(->
-      fs.stat dir, @next
+      # Skip '.*'
+      if dir.match(/\/\./)?
+        @skip()
+      else
+        fs.stat dir, @next
     )
     Relay.func((err, stats)->
       if err?
@@ -135,7 +139,12 @@ getFiles = (dir, callback)->
   Relay.serial(
     Relay.func(->
       @global.files = []
-      fs.readdir dir, @next
+
+      # Skip '.*'
+      if dir.match(/\/\./)?
+        @skip()
+      else
+        fs.readdir dir, @next
     )
     Relay.func((err, files)->
       if err?
