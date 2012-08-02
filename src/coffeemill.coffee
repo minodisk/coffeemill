@@ -44,12 +44,13 @@ exports.grind = (opts, callback)->
     join files to   : #{String(opts.join).bold}
     minify          : #{String(opts.minify).bold}
     bare            : #{String(opts.bare).bold}
+    copyright       : #{String(opts.copyright).bold}
     docs output dir : #{String(opts.docs).bold}
     docs template   : #{String(opts.template).bold}
     test directory  : #{String(opts.test).bold}
     run             : #{String(opts.run).bold}
     silent          : #{String(opts.silent).bold}
-    """
+  """
   Relay.serial(
     Relay.func(->
       if opts.template?
@@ -396,6 +397,19 @@ generateIndexDoc = (filepaths, opts, callback)->
 compile = (code, opts, filepath, callback)->
   Relay.serial(
     Relay.func(->
+      if opts.copyright?
+        @global.copyright = coffee.compile """
+          ###
+          #{fs.readFileSync opts.copyright}
+          ###
+        """,
+          bare: true
+        @global.copyright = @global.copyright.replace(/[\r\n]{2,}/g, '\n')
+      else
+        @global.copyright = ''
+      @next()
+    )
+    Relay.func(->
       compileOpts = {}
       if opts.bare then compileOpts.bare = opts.bare
       if R_ENV.test code
@@ -411,7 +425,6 @@ compile = (code, opts, filepath, callback)->
         ]
         if opts.minify
           details.push { path: "browser/#{filepath}.min.js", code: minify browser }
-        @next details
       else
         try
           code = coffee.compile code, compileOpts
@@ -422,7 +435,12 @@ compile = (code, opts, filepath, callback)->
         ]
         if opts.minify
           details.push { path: "#{filepath}.min.js", code: minify code }
-        @next details
+
+      # insert copyright
+      for detail in details
+        detail.code = "#{@global.copyright}#{detail.code}"
+
+      @next details
     )
     Relay.each(
       Relay.serial(
