@@ -404,7 +404,7 @@ compile = (code, opts, filepath, callback)->
           ###
         """,
           bare: true
-        @global.copyright = @global.copyright.replace(/[\r\n]{2,}/g, '\n')
+        @global.copyright = @global.copyright.replace(/[\r\n]{2,}$/g, '\n')
       else
         @global.copyright = ''
       @next()
