@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/minodisk/coffeemill.png)](http://travis-ci.org/minodisk/coffeemill)
 # CoffeeMill
 
 Compile CoffeeScript automatically, when something changes in watching directory.
