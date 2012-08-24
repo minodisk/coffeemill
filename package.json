@@ -1,6 +1,6 @@
 {
   "name"        :"coffeemill",
-  "version"     :"0.4.6",
+  "version"     :"0.4.7",
   "description" :"CoffeeScript project builder",
   "tags"        :["watch", "coffee", "compile", "compress", "minify", "concatenate"],
   "author"      :{
@@ -17,10 +17,7 @@
   "license"     :"MIT",
   "dependencies":{
     "commander"    :"1.0.0",
-    "coffee-script":"1.3.3",
-    "uglify-js"    :"1.3.3",
     "relay"        :"0.1.4",
-    "nodeunit"     :"0.7.4",
     "colors"       :"0.6.0",
     "jade"         :"0.25.0",
     "node-markdown":"0.1.0",
