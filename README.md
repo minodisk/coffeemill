@@ -11,7 +11,7 @@ CoffeeScript package manager.
 * Minify JavaScript.
 * Copy generated files.
 
-# Not implemented
+## Not implemented
 
 * Generate JSDoc
 * Running test after compiling.
