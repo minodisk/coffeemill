@@ -123,7 +123,7 @@ class CoffeeMill
         codes = []
         exports = {}
         for file in files
-          console.log file.parentClassName, '->', file.className
+#          console.log file.parentClassName, '->', file.className
           codes.push file.code
           exp = exports
           if file.packageName isnt ''
