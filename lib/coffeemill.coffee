@@ -82,8 +82,9 @@ class CoffeeMill
         else
           filePathes = @findFiles path.join @cwd, @makefile.src.dir
 
-        # read code
-        # parse package name, class name and parent class name
+
+        # 1. read code
+        # 2. parse package name, class name and parent class name
         files = []
         for filePath in filePathes
           code = fs.readFileSync filePath, 'utf8'
@@ -91,7 +92,7 @@ class CoffeeMill
           if r?
             [ {},
             packageName ] = r
-          r = code.match /^\s*class\s+(\w+)(?:\s+extends\s+(\w+))?/m
+          r = code.match /class\s+(\w+)(?:\s+extends\s+(\w+))?/m
           if r?
             [ {},
               className,
@@ -105,26 +106,32 @@ class CoffeeMill
 
         # sort on dependency
         files.sort (a, b) ->
-          if b.parentClassName is a.className
+          if a.parentClassName is ''
+            -1
+          else if b.parentClassName is ''
+            1
+          else if b.parentClassName is a.className
             -1
           else if a.parentClassName is b.className
             1
           else
             0
 
-        # find package
-        # concat codes
-        # add exports
+        # 1. find package
+        # 2. concat codes
+        # 3. add exports
         codes = []
         exports = {}
         for file in files
+          console.log file.parentClassName, '->', file.className
           codes.push file.code
-          ps = file.packageName.split '.'
           exp = exports
-          for p in ps
-            unless exp[p]?
-              exp[p] = {}
-            exp = exp[p]
+          if file.packageName isnt ''
+            ps = file.packageName.split '.'
+            for p in ps
+              unless exp[p]?
+                exp[p] = {}
+              exp = exp[p]
           exp[file.className] = file.className
         codes.push 'window[k] = v for k, v of ' + JSON.stringify(exports, null, 2).replace(/(:\s+)"(\w+)"/g, '$1$2')
         code = codes.join '\n\n'
