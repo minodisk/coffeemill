@@ -42,8 +42,19 @@ class CoffeeMill
   startWatch: ->
     return unless commander.watch
     fs.watch @makefilePath, @changed
-    fs.watch @makefile.src.dir, @changed
+    @watchDirRecursively @makefile.src.dir, @changed
     fs.watch @makefile.jsdoc.template, @changed if @makefile.jsdoc?.template?
+
+  watchDirRecursively: (dir, update, dirs)=>
+    dirs = [dir]
+    files = fs.readdirSync dir
+    for file in files
+      file = path.join dir, file
+      stats = fs.statSync file
+      if stats.isDirectory()
+        @watchDirRecursively file, update, dirs
+    for dir in dirs
+      fs.watch dir, update
 
   changed: =>
     clearTimeout @_id
@@ -143,7 +154,11 @@ class CoffeeMill
         sys.puts 'concat    : '.cyan + output
         @copy code, filename
 
-        { js: code, v3SourceMap } = @coffee code
+        { js: code, v3SourceMap } = @coffee code,
+          sourceMap    : true
+          generatedFile: "#{@makefile.dst.file}#{postfix}.js"
+          sourceRoot   : ''
+          sourceFiles  : [ "#{@makefile.dst.file}#{postfix}.coffee" ]
         if @makefile.compiler.sourceMap
           code += "\n/*\n//@ sourceMappingURL=#{@makefile.dst.file}#{postfix}.map\n*/"
         filename = "#{@makefile.dst.file}#{postfix}.js"
@@ -288,9 +303,9 @@ class CoffeeMill
       codes.push fs.readFileSync file, 'utf8'
     codes.join '\n\n'
 
-  coffee: (code) ->
+  coffee: (code, options) ->
     try
-      coffee.compile code, { sourceMap: true }
+      coffee.compile code, options
     catch err
       sys.puts "Compile Error: #{err.toString()}".red
 
