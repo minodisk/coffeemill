@@ -1,30 +1,38 @@
 {
-  "name"        :"coffeemill",
-  "version"     :"0.4.7",
-  "description" :"CoffeeScript project builder",
-  "tags"        :["watch", "coffee", "compile", "compress", "minify", "concatenate"],
-  "author"      :{
-    "name" :"Daisuke Mino",
-    "email":"daisuke.mino@gmail.com"
+  "name"        : "coffeemill",
+  "version"     : "0.5.0",
+  "description" : "CoffeeScript project manager",
+  "tags"        : [
+    "package",
+    "coffee",
+    "minify",
+    "dependency",
+    "recursive",
+    "concatenate"
+  ],
+  "author"      : {
+    "name" : "Daisuke Mino",
+    "email": "daisuke.mino@gmail.com"
   },
-  "repository"  :{
-    "type":"git",
-    "url" :"https://minodisk@github.com/minodisk/coffeemill.git"
+  "repository"  : {
+    "type": "git",
+    "url" : "https://minodisk@github.com/minodisk/coffeemill.git"
   },
-  "engines"     :{
-    "node":">=0.6.0"
+  "engines"     : {
+    "node": ">=0.9.0"
   },
-  "license"     :"MIT",
-  "dependencies":{
-    "commander"    :"1.0.0",
-    "relay"        :"0.1.4",
-    "colors"       :"0.6.0",
-    "jade"         :"0.25.0",
-    "node-markdown":"0.1.0",
-    "sorter"       :"0.0.2"
+  "license"     : "MIT",
+  "dependencies": {
+    "coffee-script": "1.6.2",
+    "colors"       : "0.6.0",
+    "commander"    : "1.1.1",
+    "ejs"          : "0.8.3",
+    "jade"         : "0.29.0",
+    "jsdeferred"   : "0.4.0",
+    "uglify-js"    : "2.2.5"
   },
-  "bin"         :{
-    "coffeemill":"./bin/coffeemill"
+  "bin"         : {
+    "coffeemill": "./bin/coffeemill"
   },
-  "main"        :"./lib/coffeemill"
+  "main"        : "./lib/coffeemill"
 }

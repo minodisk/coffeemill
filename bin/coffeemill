@@ -1,30 +1,7 @@
 #!/usr/bin/env node
 
-var arg, argv, coffeemill, commander, flag, opts, _i, _len;
+var path = require('path');
+var fs   = require('fs');
+var lib  = path.join(path.dirname(fs.realpathSync(__filename)), '../lib');
 
-coffeemill = require('../lib/coffeemill');
-commander = require('commander');
-
-commander
-  .version(coffeemill.version())
-  .usage('[options]')
-  .option('-i, --input <dirname>', 'set the input directory of source CoffeeScript', 'src')
-  .option('-o, --output <dirname>', 'set the output directory of compiled JavaScript', 'lib')
-  .option('-j, --join <filename>', 'concatenate CoffeeScript files before compiling')
-  .option('-m, --minify', 'minify the compiled JavaScript')
-  .option('-b, --bare', 'compile without a top-level function wrapper')
-  .option('-c, --copyright <filename>', 'insert copyright to top of the compiled JavaScript')
-  .option('-d, --docs <dirname>', 'set the output directory of compiled document HTML', 'docs')
-  .option('-T, --template <filename>', 'generate documents with jade')
-  .option('-t, --test <dirname>', 'set the test directory of nodeunit')
-  .option('-r, --run <command>', 'run command after all processing is finished')
-  .option('-s, --silent', 'without displaying any log');
-commander.on('--help', function () {
-  console.log('  Examples:');
-  console.log('');
-  console.log('    $ coffeemill');
-  console.log("    $ coffeemill -o scripts -j joined -r 'cat scripts/joined.js'");
-  console.log('');
-});
-commander.parse(process.argv);
-coffeemill.grind(commander);
+require(lib + '/coffeemill').run();
