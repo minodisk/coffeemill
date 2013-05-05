@@ -1,6 +1,6 @@
 {
   "name"        : "coffeemill",
-  "version"     : "0.5.0",
+  "version"     : "0.5.1",
   "description" : "CoffeeScript project manager",
   "tags"        : [
     "package",
