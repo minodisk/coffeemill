@@ -39,23 +39,16 @@ class CoffeeMill
       .option('-v, --ver <version>', 'file version: supports version string, \'gitTag\' or \'none\' (default is \'none\')', 'gitTag')
       .parse(process.argv)
 
-    console.log 'dirname:', __dirname
-    console.log 'cwd', cwd
-
     @scanInput()
     @compile()
 
   scanInput: ->
-    console.log 'scan input!!'
     watcher.close() for watcher in @watchers?
     @watchers = []
     @files = @findFiles commander.input, if commander.watch then @changed else null
-    console.log @files
 #    fs.watch @makefile.jsdoc.template, @changed if @makefile.jsdoc?.template?
 
   findFiles: (dir, change, files = []) ->
-    console.log dir
-    console.log fs.statSync dir
     stats = fs.statSync dir
     if stats.isFile()
       # when extname is relevant, push filepath into result
@@ -115,7 +108,6 @@ class CoffeeMill
 
           extname = path.extname filePath
           name = path.basename filePath, extname
-          console.log name
 
           code = fs.readFileSync filePath, 'utf8'
           r = code.match /class\s+(\w+)(?:\s+extends\s+(\w+))?/m
@@ -152,9 +144,8 @@ class CoffeeMill
         for file in files
           codes.push file.code
           exp = exports
-          for pkg in packages
-            unless exp[pkg]?
-              exp[pkg] = {}
+          for pkg in file.packages
+            exp[pkg] = {} unless exp[pkg]?
             exp = exp[pkg]
           exp[file.name] = file.name
         codes.push 'window[k] = v for k, v of ' + JSON.stringify(exports, null, 2).replace(/(:\s+)"(\w+)"/g, '$1$2')
