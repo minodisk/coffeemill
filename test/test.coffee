@@ -1,20 +1,29 @@
+path = require 'path'
+fs = require 'fs'
+{ spawn } = require 'child_process'
+
 chai = require 'chai'
-expect = chai.expect
+{ expect } = chai
 chai.should()
 
-{spawn} = require 'child_process'
-fs = require 'fs'
 
-describe 'coffeemill', ->
-  coffeemill = spawn '../bin/coffeemill'
+describe 'no option', ->
+  coffeemill = spawn path.join(__dirname, '..', 'bin/coffeemill'), null,
+    cwd: __dirname
 
-  it 'stderr', (done) ->
-    coffeemill.stderr.setEncoding 'utf8'
-    coffeemill.stderr.on 'data', (data)->
-      data.should.not.exist()
-      done()
+  out = ''
+  coffeemill.stdout.setEncoding 'utf8'
+  coffeemill.stdout.on 'data', (data)->
+    console.log out
+    out += data
+
+  err = ''
+  coffeemill.stderr.setEncoding 'utf8'
+  coffeemill.stderr.on 'data', (data)->
+    err += data
 
   it 'close', (done) ->
     coffeemill.once 'close', ->
-      fs.existsSync('lib/.js').should.be.true
+      throw err if err isnt ''
+      true.should.be.true
       done()

@@ -39,20 +39,23 @@ class CoffeeMill
       .option('-v, --ver <version>', 'file version: supports version string, \'gitTag\' or \'none\' (default is \'none\')', 'gitTag')
       .parse(process.argv)
 
-    console.log commander
+    console.log 'dirname:', __dirname
+    console.log 'cwd', cwd
 
     @scanInput()
     @compile()
 
   scanInput: ->
-    for watcher in @watchers?
-      watcher.close()
+    console.log 'scan input!!'
+    watcher.close() for watcher in @watchers?
     @watchers = []
     @files = @findFiles commander.input, if commander.watch then @changed else null
     console.log @files
 #    fs.watch @makefile.jsdoc.template, @changed if @makefile.jsdoc?.template?
 
   findFiles: (dir, change, files = []) ->
+    console.log dir
+    console.log fs.statSync dir
     stats = fs.statSync dir
     if stats.isFile()
       # when extname is relevant, push filepath into result
@@ -157,6 +160,10 @@ class CoffeeMill
         codes.push 'window[k] = v for k, v of ' + JSON.stringify(exports, null, 2).replace(/(:\s+)"(\w+)"/g, '$1$2')
         code = codes.join '\n\n'
 
+        output = path.join @cwd, commander.output
+
+        # Make output directory
+        fs.mkdirSync output unless fs.existsSync output
 
         filename = "#{commander.name}#{postfix}.coffee"
         output = path.join @cwd, commander.output, filename
