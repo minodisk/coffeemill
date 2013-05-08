@@ -41,8 +41,6 @@ class CoffeeMill
       .option('-v, --ver <version>', 'file version: supports version string, \'gitTag\' or \'none\' (default is \'none\')', 'none')
       .parse(process.argv)
 
-    console.log commander
-
     @scanInput()
     @compile()
 
