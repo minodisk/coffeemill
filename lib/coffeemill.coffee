@@ -31,13 +31,17 @@ class CoffeeMill
       .version(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'))).version)
       .usage('[options]')
       .option('-n, --name <basename>', 'output directory (defualt is \'\')', '')
-      .option('-i, --input <dirnames>', 'output directory (defualt is \'src\')', list, 'src')
-      .option('-o, --output <dirnames>', 'output directory (defualt is \'lib\')', list, 'lib')
+      .option('-i, --input <dirnames>', 'output directory (defualt is \'src\')', list,
+        [ 'src' ])
+      .option('-o, --output <dirnames>', 'output directory (defualt is \'lib\')', list,
+        [ 'lib' ])
       .option('-u, --uglify', 'minify with uglifyJS (.min.js)')
       .option('-m, --map', 'generate source maps (.map)')
       .option('-w, --watch', 'watch the change of input directory recursively')
-      .option('-v, --ver <version>', 'file version: supports version string, \'gitTag\' or \'none\' (default is \'none\')', 'gitTag')
+      .option('-v, --ver <version>', 'file version: supports version string, \'gitTag\' or \'none\' (default is \'none\')', 'none')
       .parse(process.argv)
+
+    console.log commander
 
     @scanInput()
     @compile()
@@ -48,19 +52,52 @@ class CoffeeMill
     @files = @findFiles commander.input, if commander.watch then @changed else null
 #    fs.watch @makefile.jsdoc.template, @changed if @makefile.jsdoc?.template?
 
-  findFiles: (dir, change, files = []) ->
-    stats = fs.statSync dir
-    if stats.isFile()
-      # when extname is relevant, push filepath into result
-      if EXT_NAMES.indexOf(path.extname dir) isnt -1
-        files.push dir
-    else if stats.isDirectory()
-      # watch dir
-      if change?
-        @watchers.push fs.watch dir, change
-      # recursively
-      for file in fs.readdirSync dir
-        @findFiles path.join(dir, file), change, files
+  findFiles: (dirs, change, basedir, files = []) ->
+    isBasedir = basedir?
+    for dir in dirs
+      if isBasedir
+        dirPath = dir
+      else
+        dirPath = basedir = dir
+
+      stats = fs.statSync dirPath
+      if stats.isFile()
+        # when extname is relevant, push filepath into result
+        filePath = dirPath
+        if EXT_NAMES.indexOf(path.extname filePath) isnt -1
+          # 1. parse package name
+          # 2. read code
+          # 3. parse class name and dependent class name
+          packages = path.relative(basedir, filePath).split path.sep
+          packages.pop()
+
+          extname = path.extname filePath
+          name = path.basename filePath, extname
+
+          code = fs.readFileSync filePath, 'utf8'
+          r = code.match /class\s+(\w+)(?:\s+extends\s+(\w+))?/m
+          if r?
+            [ {},
+              className,
+              extendsName ] = r
+          files.push
+            filePath   : filePath
+            extname    : extname
+            packages   : packages
+            name       : name
+            extendsName: extendsName or ''
+            code       : code
+
+      else if stats.isDirectory()
+        # watch dir
+        if change?
+          @watchers.push fs.watch dirPath, change
+        # recursively
+        childs = fs.readdirSync dirPath
+        for file, i in childs
+          childs[i] = path.join dirPath, file
+        @findFiles childs, change, basedir, files
+
     files
 
   changed: =>
@@ -97,34 +134,8 @@ class CoffeeMill
         # find source files
         #        filePathes = @findFiles path.join @cwd, commander.input
 
-        # 1. read code
-        # 2. parse package name
-        # 3. parse class name and dependent class name
-        files = []
-        for filePath in @files
-          packages = path.relative(commander.input, filePath).split path.sep
-          packages.pop()
-          packageName = packages.join '.'
-
-          extname = path.extname filePath
-          name = path.basename filePath, extname
-
-          code = fs.readFileSync filePath, 'utf8'
-          r = code.match /class\s+(\w+)(?:\s+extends\s+(\w+))?/m
-          if r?
-            [ {},
-              className,
-              extendsName ] = r
-          files.push
-            filePath   : filePath
-            extname    : extname
-            packages   : packages
-            name       : name
-            extendsName: extendsName or ''
-            code       : code
-
         # sort on dependency
-        files.sort (a, b) ->
+        @files.sort (a, b) ->
           if a.extendsName is ''
             -1
           else if b.extendsName is ''
@@ -141,7 +152,7 @@ class CoffeeMill
         # 3. add exports
         codes = []
         exports = {}
-        for file in files
+        for file in @files
           codes.push file.code
           exp = exports
           for pkg in file.packages
@@ -151,44 +162,46 @@ class CoffeeMill
         codes.push 'window[k] = v for k, v of ' + JSON.stringify(exports, null, 2).replace(/(:\s+)"(\w+)"/g, '$1$2')
         code = codes.join '\n\n'
 
-        output = path.join @cwd, commander.output
+        for outputDir in commander.output
 
-        # Make output directory
-        fs.mkdirSync output unless fs.existsSync output
+          output = path.join @cwd, outputDir
 
-        filename = "#{commander.name}#{postfix}.coffee"
-        output = path.join @cwd, commander.output, filename
-        fs.writeFileSync output, code, 'utf8'
-        sys.puts 'concat    : '.cyan + output
-        @copy code, filename
+          # Make output directory
+          fs.mkdirSync output unless fs.existsSync output
 
-        { js: code, v3SourceMap } = @coffee code,
-          sourceMap    : true
-          generatedFile: "#{commander.name}#{postfix}.js"
-          sourceRoot   : ''
-          sourceFiles  : [ "#{commander.name}#{postfix}.coffee" ]
-        if commander.map
-          code += "\n/*\n//@ sourceMappingURL=#{commander.name}#{postfix}.map\n*/"
-        filename = "#{commander.name}#{postfix}.js"
-        output = path.join @cwd, commander.output, filename
-        fs.writeFileSync output, code, 'utf8'
-        sys.puts 'compile   : '.cyan + output
-        @copy code, filename
-
-        if commander.map
-          filename = "#{commander.name}#{postfix}.map"
-          output = path.join @cwd, commander.output, filename
-          fs.writeFileSync output, v3SourceMap, 'utf8'
-          sys.puts 'source map: '.cyan + output
-          @copy code, filename
-
-        if commander.uglify
-          { code } = uglify.minify code, { fromString: true }
-          filename = "#{commander.name}#{postfix}.min.js"
-          output = path.join @cwd, commander.output, filename
+          filename = "#{commander.name}#{postfix}.coffee"
+          output = path.join @cwd, outputDir, filename
           fs.writeFileSync output, code, 'utf8'
-          sys.puts 'minify    : '.cyan + output
+          sys.puts 'concat    : '.cyan + output
           @copy code, filename
+
+          { js: code, v3SourceMap } = @coffee code,
+            sourceMap    : true
+            generatedFile: "#{commander.name}#{postfix}.js"
+            sourceRoot   : ''
+            sourceFiles  : [ "#{commander.name}#{postfix}.coffee" ]
+          if commander.map
+            code += "\n/*\n//@ sourceMappingURL=#{commander.name}#{postfix}.map\n*/"
+          filename = "#{commander.name}#{postfix}.js"
+          output = path.join @cwd, outputDir, filename
+          fs.writeFileSync output, code, 'utf8'
+          sys.puts 'compile   : '.cyan + output
+          @copy code, filename
+
+          if commander.map
+            filename = "#{commander.name}#{postfix}.map"
+            output = path.join @cwd, outputDir, filename
+            fs.writeFileSync output, v3SourceMap, 'utf8'
+            sys.puts 'source map: '.cyan + output
+            @copy code, filename
+
+          if commander.uglify
+            { code } = uglify.minify code, { fromString: true }
+            filename = "#{commander.name}#{postfix}.min.js"
+            output = path.join @cwd, outputDir, filename
+            fs.writeFileSync output, code, 'utf8'
+            sys.puts 'minify    : '.cyan + output
+            @copy code, filename
 
         sys.puts 'complete!!'.green
 
@@ -205,10 +218,10 @@ class CoffeeMill
     d = new Deferred()
     gitTag = spawn 'git', [ 'tag' ]
     out = ''
-    err = ''
     gitTag.stdout.setEncoding 'utf8'
     gitTag.stdout.on 'data', (data) ->
       out += data
+    err = ''
     gitTag.stderr.setEncoding 'utf8'
     gitTag.stderr.on 'data', (data) ->
       err += data.red
@@ -219,11 +232,11 @@ class CoffeeMill
       while i--
         tag = tags[i]
         r = tag.match CoffeeMill.rTagVersion
-        continue unless r? [ 1 ]?
+        continue unless r?[1]?
         versions = r[1].split '.'
         minor = parseInt versions[versions.length - 1], 10
         versions[versions.length - 1] = minor + 1
-        return d.call versions.join '.'
+      return d.call versions.join '.'
       d.fail 'no tag as version'
     d
 

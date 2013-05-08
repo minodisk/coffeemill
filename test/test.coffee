@@ -111,14 +111,42 @@ rmdirSync = (dir) ->
   fs.rmdirSync dir
 
 
-describe 'no option', ->
-  coffeemill = spawn path.join(__dirname, '..', 'bin/coffeemill'), null,
+#describe 'no option', ->
+#  coffeemill = spawn path.join(__dirname, '..', 'bin/coffeemill'), null,
+#    cwd: __dirname
+#
+#  out = ''
+#  coffeemill.stdout.setEncoding 'utf8'
+#  coffeemill.stdout.on 'data', (data)->
+#    out += data
+#
+#  err = ''
+#  coffeemill.stderr.setEncoding 'utf8'
+#  coffeemill.stderr.on 'data', (data)->
+#    err += data
+#
+#  it 'close', (done) ->
+#    coffeemill.once 'close', ->
+#      throw err if err isnt ''
+#
+#      console.log out
+#      fs.readFileSync(path.join(__dirname, 'lib/.coffee')).should.be.COFFEE
+#      fs.readFileSync(path.join(__dirname, 'lib/.js')).should.be.JS
+#      rmdirSync path.join(__dirname, 'lib')
+#
+#      done()
+
+
+describe 'input/output', ->
+  coffeemill = spawn path.join(__dirname, '..', 'bin/coffeemill'), [
+      '-i', 'src'
+      '-o', 'lib'
+    ],
     cwd: __dirname
 
-  out = ''
   coffeemill.stdout.setEncoding 'utf8'
   coffeemill.stdout.on 'data', (data)->
-    out += data
+    console.log data
 
   err = ''
   coffeemill.stderr.setEncoding 'utf8'
@@ -129,7 +157,6 @@ describe 'no option', ->
     coffeemill.once 'close', ->
       throw err if err isnt ''
 
-      console.log out
       fs.readFileSync(path.join(__dirname, 'lib/.coffee')).should.be.COFFEE
       fs.readFileSync(path.join(__dirname, 'lib/.js')).should.be.JS
       rmdirSync path.join(__dirname, 'lib')
