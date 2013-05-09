@@ -73,17 +73,23 @@ class CoffeeMill
           name = path.basename filePath, extname
 
           code = fs.readFileSync filePath, 'utf8'
-          r = code.match /class\s+(\w+)(?:\s+extends\s+(\w+))?/m
+          r = code.match /class\s+(\S+)(?:\s+extends\s+(\S+))?/m
           if r?
             [ {},
               className,
               extendsName ] = r
+          namespaces = packages.concat [name]
+          namespace = namespaces.join '.'
+          if className? and className isnt name
+            throw new Error "className must be #{name}"
+
           files.push
             filePath   : filePath
             extname    : extname
             packages   : packages
-            packageName: packages.join '.'
             name       : name
+            namespaces : namespaces
+            namespace  : namespace
             className  : className
             extendsName: extendsName or ''
             code       : code
@@ -136,10 +142,10 @@ class CoffeeMill
 
         # sort on dependency
         @files.sort (a, b) ->
-          if a.name isnt a.className
-            1
-          else if b.name isnt b.className
+          unless a.className?
             -1
+          else unless b.className?
+            1
           else if a.extendsName is ''
             -1
           else if b.extendsName is ''
@@ -153,7 +159,7 @@ class CoffeeMill
 
         codes = []
         exports = {}
-        for {code, name, className, packages, packageName} in @files
+        for {code, name, className, packages, namespace} in @files
           # add code
           if name isnt className
             # not export when basename and className are different
@@ -162,7 +168,7 @@ class CoffeeMill
           else
             # export code
             code = """
-              exports.#{packages.concat([name]).join('.')} = do ->
+              @#{namespace} = do ->
 
               #{@indent code}
             """
@@ -174,8 +180,10 @@ class CoffeeMill
             exp = exp[pkg]
 #          exp[name] = name
         # generate export code
-        codes.unshift 'exports = ' + JSON.stringify(exports, null, 2).replace(/(:\s+)"(\w+)"/g, '$1$2')
-        codes.push 'window[k] = v for k, v of exports'
+        for k, v of exports
+          codes.unshift "@['#{k}'] = #{JSON.stringify v, null, 2}"
+#        codes.unshift 'exports = ' + JSON.stringify exports, null, 2
+#        codes.push 'do -> window[k] = v for k, v of exports'
         # concat codes
         code = codes.join '\n\n'
 
