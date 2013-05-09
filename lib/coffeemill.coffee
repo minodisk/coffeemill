@@ -185,48 +185,52 @@ class CoffeeMill
 #        codes.unshift 'exports = ' + JSON.stringify exports, null, 2
 #        codes.push 'do -> window[k] = v for k, v of exports'
         # concat codes
-        code = codes.join '\n\n'
+        cs = codes.join '\n\n'
+
+
+        outputs = []
+
+        outputs.push
+          type    : '.coffee'
+          filename: "#{commander.name}#{postfix}.coffee"
+          data    : cs
+
+        { js: js, v3SourceMap: map } = @coffee cs,
+          sourceMap    : true
+          generatedFile: "#{commander.name}#{postfix}.js"
+          sourceRoot   : ''
+          sourceFiles  : [ "#{commander.name}#{postfix}.coffee" ]
+        if commander.map
+          js += "\n/*\n//@ sourceMappingURL=#{commander.name}#{postfix}.map\n*/"
+        outputs.push
+          type    : '.js    '
+          filename: "#{commander.name}#{postfix}.js"
+          data    : map
+
+        if commander.map
+          outputs.push
+            type    : '.map   '
+            filename: "#{commander.name}#{postfix}.map"
+            data    : map
+
+        if commander.uglify
+          { uglified } = uglify.minify js, { fromString: true }
+          outputs.push
+            type    : '.min.js'
+            filename: "#{commander.name}#{postfix}.min.js"
+            data    : uglified
+
 
         for outputDir in commander.output
-
-          output = path.join @cwd, outputDir
-
+          outputDir = path.resolve @cwd, outputDir
           # Make output directory
-          fs.mkdirSync output unless fs.existsSync output
+          fs.mkdirSync outputDir unless fs.existsSync outputDir
 
-          filename = "#{commander.name}#{postfix}.coffee"
-          output = path.join @cwd, outputDir, filename
-          fs.writeFileSync output, code, 'utf8'
-          sys.puts 'concat    : '.cyan + output
-          @copy code, filename
+          for {type, filename, data} in outputs
+            outputPath = path.resolve @cwd, path.join outputDir, filename
+            fs.writeFileSync outputPath, data, 'utf8'
+            sys.puts "#{type}: ".cyan + outputPath
 
-          { js: code, v3SourceMap } = @coffee code,
-            sourceMap    : true
-            generatedFile: "#{commander.name}#{postfix}.js"
-            sourceRoot   : ''
-            sourceFiles  : [ "#{commander.name}#{postfix}.coffee" ]
-          if commander.map
-            code += "\n/*\n//@ sourceMappingURL=#{commander.name}#{postfix}.map\n*/"
-          filename = "#{commander.name}#{postfix}.js"
-          output = path.join @cwd, outputDir, filename
-          fs.writeFileSync output, code, 'utf8'
-          sys.puts 'compile   : '.cyan + output
-          @copy code, filename
-
-          if commander.map
-            filename = "#{commander.name}#{postfix}.map"
-            output = path.join @cwd, outputDir, filename
-            fs.writeFileSync output, v3SourceMap, 'utf8'
-            sys.puts 'source map: '.cyan + output
-            @copy code, filename
-
-          if commander.uglify
-            { code } = uglify.minify code, { fromString: true }
-            filename = "#{commander.name}#{postfix}.min.js"
-            output = path.join @cwd, outputDir, filename
-            fs.writeFileSync output, code, 'utf8'
-            sys.puts 'minify    : '.cyan + output
-            @copy code, filename
 
         sys.puts 'complete!!'.green
 
@@ -239,11 +243,11 @@ class CoffeeMill
       lines[i] = '  ' + line
     lines.join '\n'
 
-  copy: (code, filename) ->
-    return unless commander.copy
-    output = path.join commander.copy, filename
-    fs.writeFileSync output, code, 'utf8'
-    sys.puts 'copy      : '.cyan + output
+#  copy: (code, filename) ->
+#    return unless commander.copy
+#    output = path.join commander.copy, filename
+#    fs.writeFileSync output, code, 'utf8'
+#    sys.puts 'copy      : '.cyan + output
 
   gitTag: ->
     d = new Deferred()
