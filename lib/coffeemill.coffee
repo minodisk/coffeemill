@@ -82,7 +82,9 @@ class CoffeeMill
             filePath   : filePath
             extname    : extname
             packages   : packages
+            packageName: packages.join '.'
             name       : name
+            className  : className
             extendsName: extendsName or ''
             code       : code
 
@@ -134,7 +136,11 @@ class CoffeeMill
 
         # sort on dependency
         @files.sort (a, b) ->
-          if a.extendsName is ''
+          if a.name isnt a.className
+            1
+          else if b.name isnt b.className
+            -1
+          else if a.extendsName is ''
             -1
           else if b.extendsName is ''
             1
@@ -145,19 +151,31 @@ class CoffeeMill
           else
             0
 
-        # 1. find package
-        # 2. concat codes
-        # 3. add exports
         codes = []
         exports = {}
-        for file in @files
-          codes.push file.code
+        for {code, name, className, packages, packageName} in @files
+          # add code
+          if name isnt className
+            # not export when basename and className are different
+            codes.push code
+            continue
+          else
+            # export code
+            code = """
+              exports.#{packages.concat([name]).join('.')} = do ->
+              #{@indent code}
+            """
+            codes.push code
+          # add package namespace to export list
           exp = exports
-          for pkg in file.packages
+          for pkg in packages
             exp[pkg] = {} unless exp[pkg]?
             exp = exp[pkg]
-          exp[file.name] = file.name
-        codes.push 'window[k] = v for k, v of ' + JSON.stringify(exports, null, 2).replace(/(:\s+)"(\w+)"/g, '$1$2')
+#          exp[name] = name
+        # generate export code
+        codes.unshift 'exports = ' + JSON.stringify(exports, null, 2).replace(/(:\s+)"(\w+)"/g, '$1$2')
+        codes.push 'window[k] = v for k, v of exports'
+        # concat codes
         code = codes.join '\n\n'
 
         for outputDir in commander.output
@@ -205,6 +223,12 @@ class CoffeeMill
 
       .error (err) ->
         sys.error err.stack
+
+  indent: (code) ->
+    lines = code.split /\r?\n/g
+    for line, i in lines
+      lines[i] = '  ' + line
+    lines.join '\n'
 
   copy: (code, filename) ->
     return unless commander.copy
