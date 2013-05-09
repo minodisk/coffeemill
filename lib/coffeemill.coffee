@@ -205,7 +205,7 @@ class CoffeeMill
         outputs.push
           type    : '.js    '
           filename: "#{commander.name}#{postfix}.js"
-          data    : map
+          data    : js
 
         if commander.map
           outputs.push
