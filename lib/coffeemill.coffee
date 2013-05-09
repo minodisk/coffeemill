@@ -267,7 +267,8 @@ class CoffeeMill
         versions = r[1].split '.'
         minor = parseInt versions[versions.length - 1], 10
         versions[versions.length - 1] = minor + 1
-      return d.call versions.join '.'
+        d.call versions.join '.'
+        return
       d.fail 'no tag as version'
     d
 
