@@ -163,6 +163,7 @@ class CoffeeMill
             # export code
             code = """
               exports.#{packages.concat([name]).join('.')} = do ->
+
               #{@indent code}
             """
             codes.push code
