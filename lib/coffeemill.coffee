@@ -24,6 +24,8 @@ class CoffeeMill
   @rBreak          : /[\r\n]{3,}/g
 
   constructor: (@cwd) ->
+    sys.puts new Date().toString().underline
+
     list = (val) ->
       val.split ','
 
@@ -77,11 +79,11 @@ class CoffeeMill
           if r?
             [ {},
               className,
-              extendsName ] = r
+              extendsClassName ] = r
           namespaces = packages.concat [name]
           namespace = namespaces.join '.'
-          if className? and className isnt name
-            throw new Error "className must be #{name}"
+          if className? and className isnt namespace
+            sys.puts "class name isn't '#{namespace}' (#{filePath})".yellow
 
           files.push
             filePath   : filePath
@@ -91,7 +93,7 @@ class CoffeeMill
             namespaces : namespaces
             namespace  : namespace
             className  : className
-            extendsName: extendsName or ''
+            extendsClassName: extendsClassName
             code       : code
 
       else if stats.isDirectory()
@@ -104,6 +106,9 @@ class CoffeeMill
           childs[i] = path.join dirPath, file
         @findFiles childs, change, basedir, files
 
+
+    console.log files
+
     files
 
   changed: =>
@@ -114,8 +119,6 @@ class CoffeeMill
     , 100
 
   compile: ->
-    sys.puts new Date().toString().underline
-
     Deferred
       .next =>
         switch commander.ver
@@ -142,17 +145,17 @@ class CoffeeMill
 
         # sort on dependency
         @files.sort (a, b) ->
-          unless a.className?
+          if b.extendsClassName is a.className
+            -1
+          else if a.extendsClassName is b.className
+            1
+          else unless a.className?
             -1
           else unless b.className?
             1
-          else if a.extendsName is ''
+          else unless a.extendsClassName?
             -1
-          else if b.extendsName is ''
-            1
-          else if b.extendsName is a.name
-            -1
-          else if a.extendsName is b.name
+          else unless b.extendsClassName?
             1
           else
             0
@@ -161,27 +164,29 @@ class CoffeeMill
         exports = {}
         for {code, name, className, packages, namespace} in @files
           # add code
-          if name isnt className
-            # not export when basename and className are different
-            codes.push code
-            continue
-          else
-            # export code
-            code = """
-              @#{namespace} = do ->
 
-              #{@indent code}
-            """
-            codes.push code
+          # export code
+#            code = """
+#              #{namespace} = do ->
+#
+#              #{@indent code}
+#            """
+          codes.push code
+
           # add package namespace to export list
           exp = exports
           for pkg in packages
             exp[pkg] = {} unless exp[pkg]?
             exp = exp[pkg]
 #          exp[name] = name
+
         # generate export code
         for k, v of exports
-          codes.unshift "@['#{k}'] = #{JSON.stringify v, null, 2}"
+          codes.unshift """
+            #{k} = #{JSON.stringify v, null, 2}
+            if window? then window.#{k} = #{k}
+            if module? then module.exports = #{k}
+            """
 #        codes.unshift 'exports = ' + JSON.stringify exports, null, 2
 #        codes.push 'do -> window[k] = v for k, v of exports'
         # concat codes
