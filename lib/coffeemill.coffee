@@ -106,9 +106,6 @@ class CoffeeMill
           childs[i] = path.join dirPath, file
         @findFiles childs, change, basedir, files
 
-
-    console.log files
-
     files
 
   changed: =>
