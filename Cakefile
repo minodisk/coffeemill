@@ -1,9 +1,6 @@
 fs = require 'fs'
 cp = require 'child_process'
 
-task 'watch', 'watch file', ->
-  invoke 'compile'
-
 
 task 'compile', 'compile CoffeeScript', ->
   coffee = cp.spawn 'coffee', [

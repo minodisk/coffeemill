@@ -1,4 +1,4 @@
-class Baz
+class name.space.Baz
 
   constructor: (classNames = []) ->
     classNames.unshift 'Baz'

@@ -1,4 +1,4 @@
-class Bar extends Foo
+class name.Bar extends Foo
 
   constructor: (classNames = []) ->
     classNames.unshift 'Bar'
