@@ -134,28 +134,28 @@ class CoffeeMill
         else
           postfix = ''
 
-        #        if @makefile.jsdoc
-        #          @jsdoc()
 
-        # find source files
-        #        filePathes = @findFiles path.join @cwd, commander.input
+        # resolve dependency
+        files = []
+        i = @files.length
+        while i--
+          a = @files[i]
+          if not a.className? or not a.extendsClassName?
+            files.unshift a
+            continue
 
-        # sort on dependency
-        @files.sort (a, b) ->
-          if b.extendsClassName is a.className
-            -1
-          else if a.extendsClassName is b.className
-            1
-          else unless a.className?
-            -1
-          else unless b.className?
-            1
-          else unless a.extendsClassName?
-            -1
-          else unless b.extendsClassName?
-            1
-          else
-            0
+          for b, j in files
+            if b.extendsClassName is a.className
+              files.splice j, 0, a
+              break
+          j = files.length
+          while j--
+            if b.className is a.extendsClassName
+              files.splice j + 1, 0, a
+              break
+          files.push a
+        @files = files
+
 
         codes = []
         exports = {}
@@ -357,6 +357,13 @@ class CoffeeMill
       coffee.compile code, options
     catch err
       sys.puts "Compile Error: #{err.toString()}".red
+
+#          else unless a.extendsClassName?
+#            -1
+#          else unless b.extendsClassName?
+#            1
+#          else
+#            0
 
 
 exports.run = ->
