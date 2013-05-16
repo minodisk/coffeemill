@@ -1,11 +1,9 @@
 {
   "name"        : "coffeemill",
   "version"     : "0.5.7",
-  "description" : "CoffeeScript project manager",
+  "description" : "Directory based package manager of CoffeeScript.",
   "tags"        : [
-    "package",
-    "coffee",
-    "minify",
+    "coffee script",
     "dependency",
     "recursive",
     "concatenate"

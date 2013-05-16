@@ -136,26 +136,62 @@ class CoffeeMill
 
 
         # resolve dependency
-        files = []
+        dependency = []
+        classNames = []
+
+        # search internal class name
+        for {className} in @files
+          classNames.push className
+
+        # add no dependent and external dependent class
         i = @files.length
         while i--
-          a = @files[i]
-          if not a.className? or not a.extendsClassName?
-            files.unshift a
-            continue
+          {extendsClassName} = @files[i]
+          if not extendsClassName? or classNames.indexOf(extendsClassName) is -1
+            dependency.unshift @files.splice(i, 1)[0]
 
-          for b, j in files
-            if b.extendsClassName is a.className
-              files.splice j, 0, a
-              break
-          j = files.length
-          while j--
-            if b.className is a.extendsClassName
-              files.splice j + 1, 0, a
-              break
+        # add internal dependent class
+        while i = @files.length
+          while i--
+            {extendsClassName} = @files[i]
+            for {className}, j in dependency
+              if className is extendsClassName
+                dependency.splice j + 1, 0, @files.splice(i, 1)[0]
+                break
 
-          files.unshift a
-        @files = files
+        @files = dependency
+
+
+        # resolve dependency
+#        files = []
+#        i = @files.length
+#        while i--
+#          a = @files[i]
+#
+#          if not a.className? or not a.extendsClassName?
+#            files.unshift a
+#            continue
+#
+#          resolved = false
+#
+#          for b, j in files
+#            if b.extendsClassName is a.className
+#              files.splice j, 0, a
+#              resolved = true
+#              break
+#          continue if resolved
+#
+#          j = files.length
+#          while j--
+#            if b.className is a.extendsClassName
+#              files.splice j + 1, 0, a
+#              resolved = true
+#              break
+#          continue if resolved
+#
+#          console.log a.className
+#          files.unshift a
+#        @files = files
 
 
         codes = []
