@@ -153,7 +153,8 @@ class CoffeeMill
             if b.className is a.extendsClassName
               files.splice j + 1, 0, a
               break
-          files.push a
+
+          files.unshift a
         @files = files
 
 
