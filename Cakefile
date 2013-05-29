@@ -4,24 +4,13 @@ cp = require 'child_process'
 
 task 'compile', 'compile CoffeeScript', ->
   coffee = cp.spawn 'coffee', [
-    '-cm',
+    '-cmw',
     'lib'
-  ]
+  ],
+    stdio: 'inherit'
 
-  err = ''
-  coffee.stderr.setEncoding 'utf8'
-  coffee.stderr.on 'data', (data) ->
-    err += data
+task 'doc', 'generate coffee doc', ->
 
-  out = ''
-  coffee.stdout.setEncoding 'utf8'
-  coffee.stdout.on 'data', (data) ->
-    out += data
-
-  coffee.on 'close', ->
-    throw err unless err is ''
-    console.log out
-    invoke 'test'
 
 task 'test', 'run tests', ->
   cp.spawn 'mocha', [

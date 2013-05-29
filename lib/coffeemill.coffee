@@ -41,13 +41,19 @@ class CoffeeMill
       .option('-m, --map', 'generate source maps (.map)')
       .option('-w, --watch', 'watch the change of input directory recursively')
       .option('-v, --ver <version>', 'file version: supports version string, \'gitTag\' or \'none\' (default is \'none\')', 'none')
+      .option('--jsDoc', 'generate jsDoc')
+      .option('--jsDocEngine <engine>', 'jsDoc template engine (default is \'ejs\')', 'ejs')
+      .option('--jsDocTemplate <filename>', 'jsDoc template', 'README.ejs')
+      .option('--jsDocOutput <filename>', 'jsDoc output', 'README.md')
       .parse(process.argv)
 
     @scanInput()
     @compile()
 
   scanInput: ->
-    watcher.close() for watcher in @watchers?
+    for watcher in @watchers?
+      console.log watcher
+      watcher.close()
     @watchers = []
     @files = @findFiles commander.input, if commander.watch then @changed else null
 #    fs.watch @makefile.jsdoc.template, @changed if @makefile.jsdoc?.template?
@@ -162,49 +168,9 @@ class CoffeeMill
         @files = dependency
 
 
-        # resolve dependency
-#        files = []
-#        i = @files.length
-#        while i--
-#          a = @files[i]
-#
-#          if not a.className? or not a.extendsClassName?
-#            files.unshift a
-#            continue
-#
-#          resolved = false
-#
-#          for b, j in files
-#            if b.extendsClassName is a.className
-#              files.splice j, 0, a
-#              resolved = true
-#              break
-#          continue if resolved
-#
-#          j = files.length
-#          while j--
-#            if b.className is a.extendsClassName
-#              files.splice j + 1, 0, a
-#              resolved = true
-#              break
-#          continue if resolved
-#
-#          console.log a.className
-#          files.unshift a
-#        @files = files
-
-
         codes = []
         exports = {}
         for {code, name, className, packages, namespace} in @files
-          # add code
-
-          # export code
-#            code = """
-#              #{namespace} = do ->
-#
-#              #{@indent code}
-#            """
           codes.push code
 
           # add package namespace to export list
@@ -212,7 +178,6 @@ class CoffeeMill
           for pkg in packages
             exp[pkg] = {} unless exp[pkg]?
             exp = exp[pkg]
-#          exp[name] = name
 
         # generate export code
         for k, v of exports
@@ -221,9 +186,6 @@ class CoffeeMill
             if window? then window.#{k} = #{k}
             if module? then module.exports = #{k}
             """
-#        codes.unshift 'exports = ' + JSON.stringify exports, null, 2
-#        codes.push 'do -> window[k] = v for k, v of exports'
-        # concat codes
         cs = codes.join '\n\n'
 
 
@@ -270,61 +232,16 @@ class CoffeeMill
             fs.writeFileSync outputPath, data, 'utf8'
             sys.puts "#{type}: ".cyan + outputPath
 
+#        if commander.jsDoc
+#          @jsDoc cs
 
         sys.puts 'complete!!'.green
 
       .error (err) ->
         sys.error err.stack
 
-  indent: (code) ->
-    lines = code.split /\r?\n/g
-    for line, i in lines
-      lines[i] = '  ' + line
-    lines.join '\n'
 
-#  copy: (code, filename) ->
-#    return unless commander.copy
-#    output = path.join commander.copy, filename
-#    fs.writeFileSync output, code, 'utf8'
-#    sys.puts 'copy      : '.cyan + output
-
-  gitTag: ->
-    d = new Deferred()
-    gitTag = spawn 'git', [ 'tag' ]
-    out = ''
-    gitTag.stdout.setEncoding 'utf8'
-    gitTag.stdout.on 'data', (data) ->
-      out += data
-    err = ''
-    gitTag.stderr.setEncoding 'utf8'
-    gitTag.stderr.on 'data', (data) ->
-      err += data.red
-    gitTag.on 'close', ->
-      return d.fail err if err isnt ''
-      tags = out.split '\n'
-      i = tags.length
-      while i--
-        tag = tags[i]
-        r = tag.match CoffeeMill.rTagVersion
-        continue unless r?[1]?
-        versions = r[1].split '.'
-        minor = parseInt versions[versions.length - 1], 10
-        versions[versions.length - 1] = minor + 1
-        d.call versions.join '.'
-        return
-      d.fail 'no tag as version'
-    d
-
-
-  jsdoc: (wholeCode) ->
-    if @makefile.jsdoc.src.files?
-      files = @makefile.jsdoc.src.files
-      for file, i in files
-        files[i] = path.join @cwd, commander.input, file
-      code = @concatFiles files
-    else
-      code = wholeCode
-
+  jsDoc: (code) ->
     properties = []
     while r = CoffeeMill.rDocComment.exec code
       comment = r[1]
@@ -383,24 +300,45 @@ class CoffeeMill
           .replace(CoffeeMill.rBreak, '\n\n')
         fs.writeFileSync @makefile.jsdoc.filename, doc, 'utf8'
 
-  concatFiles: (files) ->
-    codes = []
-    for file in files
-      codes.push fs.readFileSync file, 'utf8'
-    codes.join '\n\n'
+
+  indent: (code) ->
+    lines = code.split /\r?\n/g
+    for line, i in lines
+      lines[i] = '  ' + line
+    lines.join '\n'
+
+  gitTag: ->
+    d = new Deferred()
+    gitTag = spawn 'git', [ 'tag' ]
+    out = ''
+    gitTag.stdout.setEncoding 'utf8'
+    gitTag.stdout.on 'data', (data) ->
+      out += data
+    err = ''
+    gitTag.stderr.setEncoding 'utf8'
+    gitTag.stderr.on 'data', (data) ->
+      err += data.red
+    gitTag.on 'close', ->
+      return d.fail err if err isnt ''
+      tags = out.split '\n'
+      i = tags.length
+      while i--
+        tag = tags[i]
+        r = tag.match CoffeeMill.rTagVersion
+        continue unless r?[1]?
+        versions = r[1].split '.'
+        minor = parseInt versions[versions.length - 1], 10
+        versions[versions.length - 1] = minor + 1
+        d.call versions.join '.'
+        return
+      d.fail 'no tag as version'
+    d
 
   coffee: (code, options) ->
     try
       coffee.compile code, options
     catch err
       sys.puts "Compile Error: #{err.toString()}".red
-
-#          else unless a.extendsClassName?
-#            -1
-#          else unless b.extendsClassName?
-#            1
-#          else
-#            0
 
 
 exports.run = ->
