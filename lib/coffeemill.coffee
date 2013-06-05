@@ -51,10 +51,12 @@ class CoffeeMill
     @compile()
 
   scanInput: ->
-    for watcher in @watchers?
-      console.log watcher
-      watcher.close()
+    if @watchers?
+      for watcher in @watchers
+        watcher.close()
     @watchers = []
+
+    @hasError = false
     @files = @findFiles commander.input, if commander.watch then @changed else null
 #    fs.watch @makefile.jsdoc.template, @changed if @makefile.jsdoc?.template?
 
@@ -71,16 +73,25 @@ class CoffeeMill
         # when extname is relevant, push filepath into result
         filePath = dirPath
         if EXT_NAMES.indexOf(path.extname filePath) isnt -1
-          # 1. parse package name
-          # 2. read code
-          # 3. parse class name and dependent class name
+          # parse package name
           packages = path.relative(basedir, filePath).split path.sep
           packages.pop()
-
+          filename = path.basename filePath
           extname = path.extname filePath
           name = path.basename filePath, extname
 
+          # read code
           code = fs.readFileSync filePath, 'utf8'
+
+          if extname is '.coffee'
+            # pre-compile to find syntax error
+            try
+              coffee.compile code
+            catch err
+              @hasError = true
+              @reportCompileError filename, code, err
+
+          # parse class name and dependent class name
           r = code.match /class\s+(\S+)(?:\s+extends\s+(\S+))?/m
           if r?
             [ {},
@@ -91,6 +102,7 @@ class CoffeeMill
           if className? and className isnt namespace
             sys.puts "class name isn't '#{namespace}' (#{filePath})".yellow
 
+          # stock file object
           files.push
             filePath   : filePath
             extname    : extname
@@ -122,6 +134,11 @@ class CoffeeMill
     , 100
 
   compile: ->
+    return if @hasError
+
+    cs = ''
+    csName = ''
+
     Deferred
       .next =>
         switch commander.ver
@@ -187,16 +204,17 @@ class CoffeeMill
             if module? then module.exports = #{k}
             """
         cs = codes.join '\n\n'
+        csName = "#{commander.name}#{postfix}.coffee"
 
 
         outputs = []
 
         outputs.push
           type    : '.coffee'
-          filename: "#{commander.name}#{postfix}.coffee"
+          filename: csName
           data    : cs
 
-        { js: js, v3SourceMap: map } = @coffee cs,
+        { js: js, v3SourceMap: map } = coffee.compile cs,
           sourceMap    : true
           generatedFile: "#{commander.name}#{postfix}.js"
           sourceRoot   : ''
@@ -237,9 +255,23 @@ class CoffeeMill
 
         sys.puts 'complete!!'.green
 
-      .error (err) ->
-        sys.error err.stack
+      .error (err) =>
+        if err.location?
+          @reportCompileError csName, cs, err
+        else
+          sys.error "#{err.stack}".red
 
+  reportCompileError: (csName, cs, err) ->
+    {location:{ first_line, first_column, last_line, last_column }} = err
+    lines = cs.split '\n'
+    code = lines.splice(first_line, last_line - first_line + 1).join('\n')
+    before = code.substring 0, first_column
+    error = code.substring first_column, last_column + 1
+    after = code.substring last_column + 1
+
+    sys.error """#{"#{csName}:#{first_line}:#{first_column} #{err.toString()}".red}
+      #{before}#{error.red.inverse}#{after}
+      """
 
   jsDoc: (code) ->
     properties = []
@@ -333,12 +365,6 @@ class CoffeeMill
         return
       d.fail 'no tag as version'
     d
-
-  coffee: (code, options) ->
-    try
-      coffee.compile code, options
-    catch err
-      sys.puts "Compile Error: #{err.toString()}".red
 
 
 exports.run = ->
