@@ -1,4 +1,4 @@
-sys = require 'sys'
+util = require 'util'
 path = require 'path'
 fs = require 'fs'
 { spawn } = require 'child_process'
@@ -24,8 +24,6 @@ class CoffeeMill
   @rBreak          : /[\r\n]{3,}/g
 
   constructor: (@cwd) ->
-    sys.puts new Date().toString().underline
-
     list = (val) ->
       val.split ','
 
@@ -46,6 +44,16 @@ class CoffeeMill
       .option('--jsDocTemplate <filename>', 'jsDoc template', 'README.ejs')
       .option('--jsDocOutput <filename>', 'jsDoc output', 'README.md')
       .parse(process.argv)
+
+    @run()
+
+  run: ->
+    # Clear entire screen
+    # Move cursor to screen location 0,0
+    process.stdout.write '\u001B[2J\u001B[0;0f'
+
+    # Output current time
+    util.puts new Date().toString().underline
 
     @scanInput()
     @compile()
@@ -100,7 +108,7 @@ class CoffeeMill
           namespaces = packages.concat [name]
           namespace = namespaces.join '.'
           if className? and className isnt namespace
-            sys.puts "class name isn't '#{namespace}' (#{filePath})".yellow
+            util.puts "class name isn't '#{namespace}' (#{filePath})".yellow
 
           # stock file object
           files.push
@@ -128,10 +136,9 @@ class CoffeeMill
 
   changed: =>
     clearTimeout @timeoutId
-    @timeoutId = setTimeout =>
-      @scanInput()
-      @compile()
-    , 100
+#    @timeoutId = setTimeout =>
+    @run()
+#    , 0
 
   compile: ->
     return if @hasError
@@ -152,7 +159,7 @@ class CoffeeMill
         ''
       .next (version) =>
         if version isnt ''
-          sys.puts 'version: ' + version
+          util.puts 'version: ' + version
           postfix = "-#{version}"
         else
           postfix = ''
@@ -248,18 +255,18 @@ class CoffeeMill
           for {type, filename, data} in outputs
             outputPath = path.resolve @cwd, path.join outputDir, filename
             fs.writeFileSync outputPath, data, 'utf8'
-            sys.puts "#{type}: ".cyan + outputPath
+            util.puts "#{type}: ".cyan + path.relative '.', outputPath
 
 #        if commander.jsDoc
 #          @jsDoc cs
 
-        sys.puts 'complete!!'.green
+        util.puts '√'.green
 
       .error (err) =>
         if err.location?
           @reportCompileError csName, cs, err
         else
-          sys.error "#{err.stack}".red
+          util.error "#{err.stack}".red
 
   reportCompileError: (csName, cs, err) ->
     {location:{ first_line, first_column, last_line, last_column }} = err
@@ -269,7 +276,7 @@ class CoffeeMill
     error = code.substring first_column, last_column + 1
     after = code.substring last_column + 1
 
-    sys.error """#{"#{csName}:#{first_line}:#{first_column} #{err.toString()}".red}
+    util.error """#{"#{csName}:#{first_line}:#{first_column} #{err.toString()}".red}
       #{before}#{error.red.inverse}#{after}
       """
 
