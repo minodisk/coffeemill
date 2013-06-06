@@ -4,11 +4,15 @@ CoffeeScript package manager.
 
 ## Features
 
-* Watch source files recursively.
-* Supports package.
-* Concatenate CoffeeScript files into one JavaScript file with resolving dependency.
-* Compile with v3 source map.
-* Minify JavaScript.
+* Supports directory based package.
+* Resolves dependency of inheritance.
+* Concatenate multiple CoffeeScript files into one JavaScript file.
+
+## Options
+
+* Watches source files recursively.
+* Minify JavaScript with UglifyJS.
+* Generate v3 source map.
 * Copy generated files.
 
 ## Not implemented
@@ -16,14 +20,18 @@ CoffeeScript package manager.
 * Generate JSDoc
 * Running test after compiling.
 
-## Installation
+### Installation
 
     $ npm install -g coffeemill
 
-## Usage
+### Usage
 
     $ coffeemill
 
-## Help
+### Help
 
     $ coffeemill -h
+
+### Compile
+
+    $ cake compile
