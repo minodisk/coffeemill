@@ -9,15 +9,9 @@ task 'compile', 'compile CoffeeScript', ->
   ],
     stdio: 'inherit'
 
-task 'doc', 'generate coffee doc', ->
-
 
 task 'test', 'run tests', ->
-  cp.spawn 'mocha', [
-    '--compilers', 'coffee:coffee-script',
-    'test'
-  ], {
+  cp.spawn 'npm', ['test'],
     stdio: 'inherit'
-  }
 
 

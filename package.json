@@ -27,10 +27,14 @@
     "ejs"          : "0.8.3",
     "jade"         : "0.29.0",
     "jsdeferred"   : "0.4.0",
-    "uglify-js"    : "2.2.5"
+    "uglify-js"    : "2.2.5",
+    "mocha"        : "1.10.0"
   },
   "bin"         : {
     "coffeemill": "./bin/coffeemill"
   },
-  "main"        : "./lib/coffeemill"
+  "main"        : "./lib/coffeemill",
+  "scripts"     : {
+    "test": "./node_modules/.bin/mocha --compilers coffee:coffee-script test"
+  }
 }
