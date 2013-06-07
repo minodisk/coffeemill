@@ -240,7 +240,8 @@ class CoffeeMill
             data    : map
 
         if commander.uglify
-          { uglified } = uglify.minify js, { fromString: true }
+          { code: uglified } = uglify.minify js,
+            fromString: true
           outputs.push
             type    : '.min.js'
             filename: "#{commander.name}#{postfix}.min.js"
