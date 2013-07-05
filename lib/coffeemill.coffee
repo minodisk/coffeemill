@@ -87,6 +87,7 @@ class CoffeeMill
           filename = path.basename filePath
           extname = path.extname filePath
           name = path.basename filePath, extname
+          className = extendsClassName = null
 
           # read code
           code = fs.readFileSync filePath, 'utf8'
@@ -112,15 +113,15 @@ class CoffeeMill
 
           # stock file object
           files.push
-            filePath   : filePath
-            extname    : extname
-            packages   : packages
-            name       : name
-            namespaces : namespaces
-            namespace  : namespace
-            className  : className
+            filePath        : filePath
+            extname         : extname
+            packages        : packages
+            name            : name
+            namespaces      : namespaces
+            namespace       : namespace
+            className       : className
             extendsClassName: extendsClassName
-            code       : code
+            code            : code
 
       else if stats.isDirectory()
         # watch dir
@@ -166,30 +167,36 @@ class CoffeeMill
 
 
         # resolve dependency
-        dependency = []
+        normalFiles = []
+        classFiles = []
         classNames = []
+        resolvedFiles = []
 
         # search internal class name
-        for {className} in @files
-          classNames.push className
+        for file in @files
+          if file.className?
+            classFiles.push file
+            classNames.push className
+          else
+            normalFiles.push file
 
         # add no dependent and external dependent class
-        i = @files.length
+        i = classFiles.length
         while i--
-          {extendsClassName} = @files[i]
+          {extendsClassName} = classFiles[i]
           if not extendsClassName? or classNames.indexOf(extendsClassName) is -1
-            dependency.unshift @files.splice(i, 1)[0]
+            resolvedFiles.unshift classFiles.splice(i, 1)[0]
 
         # add internal dependent class
-        while i = @files.length
+        while i = classFiles.length
           while i--
-            {extendsClassName} = @files[i]
-            for {className}, j in dependency
+            {extendsClassName} = classFiles[i]
+            for {className}, j in resolvedFiles
               if className is extendsClassName
-                dependency.splice j + 1, 0, @files.splice(i, 1)[0]
+                resolvedFiles.splice j + 1, 0, classFiles.splice(i, 1)[0]
                 break
 
-        @files = dependency
+        @files = normalFiles.concat resolvedFiles
 
 
         codes = []
@@ -206,9 +213,13 @@ class CoffeeMill
         # generate export code
         for k, v of exports
           codes.unshift """
-            #{k} = #{JSON.stringify v, null, 2}
-            if window? then window.#{k} = #{k}
-            if module? then module.exports = #{k}
+            if window?
+              window.#{k} ?= {}
+              #{k} = window.#{k}
+            if module?.exports?
+              module.exports.#{k} ?= {}
+              #{k} = module.exports.#{k}
+            #{k} = $.extend true, #{k}, #{JSON.stringify v}
             """
         cs = codes.join '\n\n'
         csName = "#{commander.name}#{postfix}.coffee"
