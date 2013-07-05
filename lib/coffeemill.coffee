@@ -258,19 +258,25 @@ class CoffeeMill
             filename: "#{commander.name}#{postfix}.min.js"
             data    : uglified
 
-
+        primary = true
         for outputDir in commander.output
           outputDir = path.resolve @cwd, outputDir
           # Make output directory
           fs.mkdirSync outputDir unless fs.existsSync outputDir
 
           for {type, filename, data} in outputs
+            unless primary
+              if commander.uglify
+                if type isnt '.min.js'
+                  continue
+              else
+                if type isnt '.js'
+                  continue
             outputPath = path.resolve @cwd, path.join outputDir, filename
             fs.writeFileSync outputPath, data, 'utf8'
             util.puts "#{type}: ".cyan + path.relative '.', outputPath
 
-#        if commander.jsDoc
-#          @jsDoc cs
+          primary = false
 
         util.puts '√'.green
 
