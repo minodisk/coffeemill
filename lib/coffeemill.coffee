@@ -253,9 +253,13 @@ class CoffeeMill
         if commander.uglify
           { code: uglified } = uglify.minify js,
             fromString: true
+          if postfix is ''
+            ext = '-min.js'
+          else
+            ext = '.min.js'
           outputs.push
             type    : '.min.js'
-            filename: "#{commander.name}#{postfix}.min.js"
+            filename: "#{commander.name}#{postfix}#{ext}"
             data    : uglified
 
         primary = true
