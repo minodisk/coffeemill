@@ -1,6 +1,6 @@
 {
   "name"        : "coffeemill",
-  "version"     : "0.5.11",
+  "version"     : "0.5.12",
   "description" : "Directory based package manager of CoffeeScript.",
   "tags"        : [
     "coffee script",
