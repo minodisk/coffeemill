@@ -176,7 +176,7 @@ class CoffeeMill
         for file in @files
           if file.className?
             classFiles.push file
-            classNames.push className
+            classNames.push file.className
           else
             normalFiles.push file
 
