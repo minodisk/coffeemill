@@ -4,7 +4,7 @@ cp = require 'child_process'
 
 task 'compile', 'compile CoffeeScript', ->
   coffee = cp.spawn 'coffee', [
-    '-cmw',
+    '-cw',
     'lib'
   ],
     stdio: 'inherit'

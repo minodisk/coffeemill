@@ -47,6 +47,12 @@ class CoffeeMill
 
     @run()
 
+  changed: =>
+    clearTimeout @timeoutId
+    @timeoutId = setTimeout =>
+      @run()
+    , 500
+
   run: ->
     # Clear entire screen
     # Move cursor to screen location 0,0
@@ -135,13 +141,8 @@ class CoffeeMill
 
     files
 
-  changed: =>
-    clearTimeout @timeoutId
-#    @timeoutId = setTimeout =>
-    @run()
-#    , 0
-
   compile: ->
+    console.log 'compile'
     return if @hasError
 
     cs = ''
