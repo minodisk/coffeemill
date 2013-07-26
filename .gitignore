@@ -8,6 +8,9 @@ Thumb.db
 *.iml
 .idea/
 
+# Environment
+node_modules/
+
 # Compiler: SASS
 .sass-cache
 
