@@ -6,8 +6,8 @@ fs = require 'fs'
 commander = require 'commander'
 uglify = require 'uglify-js'
 colors = require 'colors'
-ejs = require 'ejs'
-jade = require 'jade'
+#ejs = require 'ejs'
+#jade = require 'jade'
 coffee = require 'coffee-script'
 
 
@@ -30,19 +30,21 @@ class CoffeeMill
     commander
       .version(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'))).version)
       .usage('[options]')
+      # required
       .option('-n, --name <basename>', 'output directory (defualt is \'\')', '')
-      .option('-i, --input <dirnames>', 'output directory (defualt is \'src\')', list,
-        [ 'src' ])
-      .option('-o, --output <dirnames>', 'output directory (defualt is \'lib\')', list,
-        [ 'lib' ])
-      .option('-u, --uglify', 'minify with uglifyJS (.min.js)')
-      .option('-m, --map', 'generate source maps (.map)')
-      .option('-w, --watch', 'watch the change of input directory recursively')
+      .option('-i, --input <dirnames>', 'output directory (defualt is \'src\')', list, [ 'src' ])
+      .option('-o, --output <dirnames>', 'output directory (defualt is \'lib\')', list, [ 'lib' ])
+      # optional
       .option('-v, --ver <version>', 'file version: supports version string, \'gitTag\' or \'none\' (default is \'none\')', 'none')
-      .option('--jsDoc', 'generate jsDoc')
-      .option('--jsDocEngine <engine>', 'jsDoc template engine (default is \'ejs\')', 'ejs')
-      .option('--jsDocTemplate <filename>', 'jsDoc template', 'README.ejs')
-      .option('--jsDocOutput <filename>', 'jsDoc output', 'README.md')
+      .option('-j, --js', 'write JavaScript file (.js)')
+      .option('-u, --uglify', 'write uglified JavaScript file (.min.js)')
+      .option('-c, --coffee', 'write CoffeeScript file (.coffee)')
+      .option('-m, --map', 'write source maps file JavaScript to CoffeeScript (.map)')
+      .option('-w, --watch', 'watch the change of input directory recursively')
+#      .option('--jsDoc', 'generate jsDoc')
+#      .option('--jsDocEngine <engine>', 'jsDoc template engine (default is \'ejs\')', 'ejs')
+#      .option('--jsDocTemplate <filename>', 'jsDoc template', 'README.ejs')
+#      .option('--jsDocOutput <filename>', 'jsDoc output', 'README.md')
       .parse(process.argv)
 
     @run()
@@ -60,6 +62,9 @@ class CoffeeMill
 
     # Output current time
     util.puts new Date().toString().underline
+
+    unless commander.js or commander.uglify or commander.coffee or commander.map
+      util.puts 'no output: please specify --js, --uglify, --coffee, or --map'.yellow
 
     @scanInput()
     @compile()
@@ -142,7 +147,6 @@ class CoffeeMill
     files
 
   compile: ->
-    console.log 'compile'
     return if @hasError
 
     cs = ''
@@ -228,26 +232,32 @@ class CoffeeMill
 
         outputs = []
 
-        outputs.push
-          type    : '.coffee'
-          filename: csName
-          data    : cs
-
-        { js: js, v3SourceMap: map } = coffee.compile cs,
-          sourceMap    : true
-          generatedFile: "#{commander.name}#{postfix}.js"
-          sourceRoot   : ''
-          sourceFiles  : [ "#{commander.name}#{postfix}.coffee" ]
-        if commander.map
-          js += "\n/*\n//@ sourceMappingURL=#{commander.name}#{postfix}.map\n*/"
-        outputs.push
-          type    : '.js    '
-          filename: "#{commander.name}#{postfix}.js"
-          data    : js
-
-        if commander.map
+        if commander.coffee
           outputs.push
-            type    : '.map   '
+            type    : 'coffee   '
+            filename: csName
+            data    : cs
+
+        if commander.map
+          { js, v3SourceMap: map } = coffee.compile cs,
+            sourceMap    : true
+#            generatedFile: "#{commander.name}#{postfix}.js"
+#            sourceRoot   : ''
+#            sourceFiles  : [ "#{commander.name}#{postfix}.coffee" ]
+        else
+          js = coffee.compile cs
+
+        if commander.js
+          if map?
+            js += "\n/*\n//@ sourceMappingURL=#{commander.name}#{postfix}.map\n*/"
+          outputs.push
+            type    : 'js       '
+            filename: "#{commander.name}#{postfix}.js"
+            data    : js
+
+        if map?
+          outputs.push
+            type    : 'source map'
             filename: "#{commander.name}#{postfix}.map"
             data    : map
 
@@ -259,7 +269,7 @@ class CoffeeMill
           else
             ext = '.min.js'
           outputs.push
-            type    : '.min.js'
+            type    : 'uglify   '
             filename: "#{commander.name}#{postfix}#{ext}"
             data    : uglified
 

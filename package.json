@@ -1,6 +1,6 @@
 {
   "name"        : "coffeemill",
-  "version"     : "0.5.16",
+  "version"     : "0.6.0",
   "description" : "Directory based package manager of CoffeeScript.",
   "tags"        : [
     "coffee script",
@@ -21,14 +21,12 @@
   },
   "license"     : "MIT",
   "dependencies": {
-    "coffee-script": "1.6.3",
-    "colors"       : "0.6.0",
-    "commander"    : "1.1.1",
-    "ejs"          : "0.8.3",
-    "jade"         : "0.29.0",
-    "jsdeferred"   : "0.4.0",
-    "uglify-js"    : "2.2.5",
-    "mocha"        : "1.10.0"
+    "coffee-script": ">=1.6.3",
+    "colors"       : ">=0.6.0",
+    "commander"    : ">=1.1.1",
+    "jsdeferred"   : ">=0.4.0",
+    "uglify-js"    : ">=2.2.5",
+    "mocha"        : ">=1.10.0"
   },
   "bin"         : {
     "coffeemill": "./bin/coffeemill"
