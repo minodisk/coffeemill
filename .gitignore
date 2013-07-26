@@ -12,7 +12,7 @@ Thumb.db
 .sass-cache
 
 # Compiler: ActionScript
-bin/
+#bin/
 bin-debug/
 bin-release/
 .settings/
