@@ -1,5 +1,39 @@
+# OS: Mac
 .DS_Store
-Thumbs.db
-.idea/
+
+# OS: Win
+Thumb.db
+
+# IDE: IntelliJ
 *.iml
-node_modules/
+.idea/
+
+# Compiler: SASS
+.sass-cache
+
+# Compiler: ActionScript
+bin/
+bin-debug/
+bin-release/
+.settings/
+
+# File: Sound
+*.aif
+*.mid
+*.midi
+*.mp3
+*.ra
+*.ram
+*.wav
+
+# File: Movie
+*.avi
+*.f4v
+*.flv
+*.m4v
+*.mov
+*.mp4
+*.mpeg
+*.mpg
+*.rm
+*.wmv
