@@ -234,7 +234,7 @@ class CoffeeMill
 
         if commander.coffee
           outputs.push
-            type    : 'coffee   '
+            type    : 'coffee'
             filename: csName
             data    : cs
 
@@ -251,7 +251,7 @@ class CoffeeMill
           if map?
             js += "\n/*\n//@ sourceMappingURL=#{commander.name}#{postfix}.map\n*/"
           outputs.push
-            type    : 'js       '
+            type    : 'js'
             filename: "#{commander.name}#{postfix}.js"
             data    : js
 
@@ -269,9 +269,17 @@ class CoffeeMill
           else
             ext = '.min.js'
           outputs.push
-            type    : 'uglify   '
+            type    : 'uglify'
             filename: "#{commander.name}#{postfix}#{ext}"
             data    : uglified
+
+        len = 0
+        for {type} in outputs
+          len = Math.max len, type.length
+        for {type}, i in outputs
+          while type.length < len
+            type += ' '
+          outputs[i].type = type
 
         primary = true
         for outputDir in commander.output
