@@ -224,8 +224,18 @@ class CoffeeMill
             if module?.exports?
               module.exports.#{k} ?= {}
               #{k} = module.exports.#{k}
-            #{k} = $.extend true, #{k}, #{JSON.stringify v}
+            ___extend #{k}, #{JSON.stringify v}
             """
+        codes.unshift """
+            ___extend = (child, parent) ->
+              for key, val of parent
+                continue unless Object::hasOwnProperty.call parent, key
+                if Object::toString.call(val) is '[object Object]'
+                  child[key] = {}
+                  ___extend child[key], val
+                else
+                  child[key] = val
+          """
         cs = codes.join '\n\n'
         csName = "#{commander.name}#{postfix}.coffee"
 
