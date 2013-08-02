@@ -314,33 +314,40 @@ class CoffeeMill
           util.error "#{err.stack}".red
 
   reportCompileError: (csName, cs, err) ->
-    {location:{ first_line, first_column, last_line, last_column }} = err
-    lines = cs.split /\r?\n/
-    code = lines.splice first_line, 1
+    if err.location?
+      {location:{ first_line, first_column, last_line, last_column }} = err
+      lines = cs.split /\r?\n/
+      code = lines.splice first_line, 1
 
-    unless first_line is last_line
-      last_line = first_line
-      last_column = code.length - 1
-    if last_column <= first_column
-      last_column = first_column
+      unless first_line is last_line
+        last_line = first_line
+        last_column = code.length - 1
+      if last_column <= first_column
+        last_column = first_column
 
 
-    # formatting
-    mark = ''
-    while mark.length < first_column
-      mark += ' '
-    while mark.length <= last_column
-      mark += '^'
-    lineNumber = '' + first_line
-    nextLineNumber = ''
-    while nextLineNumber.length < lineNumber.length
-      nextLineNumber += ' '
-    util.error """
-      [#{csName}:#{first_line}:#{first_column}]
-      #{err.toString().red}
-      #{(lineNumber + '.').grey}#{code}
-      #{(nextLineNumber + '.').grey}#{mark.red}
-      """
+      # formatting
+      mark = ''
+      while mark.length < first_column
+        mark += ' '
+      while mark.length <= last_column
+        mark += '^'
+      lineNumber = '' + first_line
+      nextLineNumber = ''
+      while nextLineNumber.length < lineNumber.length
+        nextLineNumber += ' '
+      util.error """
+        #{csName}:#{first_line}:#{first_column}
+        #{err.toString().red}
+        #{(lineNumber + '.').grey}#{code}
+        #{(nextLineNumber + '.').grey}#{mark.red}
+        """
+    else
+      util.error """
+        CoffeeScript Compiler
+        #{err.toString().red}
+        """
+
     unless commander.watch
       process.exit 1
 
