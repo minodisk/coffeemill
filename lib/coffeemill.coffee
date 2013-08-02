@@ -304,6 +304,8 @@ class CoffeeMill
             util.puts "#{type}: ".cyan + path.relative '.', outputPath
 
         util.puts '√'.green
+        unless commander.watch
+          process.exit 0
 
       .error (err) =>
         if err.location?
