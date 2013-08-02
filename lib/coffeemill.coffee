@@ -58,7 +58,8 @@ class CoffeeMill
   run: ->
     # Clear entire screen
     # Move cursor to screen location 0,0
-    process.stdout.write '\u001B[2J\u001B[0;0f'
+    if commander.watch
+      process.stdout.write '\u001B[2J\u001B[0;0f'
 
     # Output current time
     util.puts new Date().toString().underline
@@ -120,7 +121,8 @@ class CoffeeMill
           namespaces = packages.concat [name]
           namespace = namespaces.join '.'
           if className? and className isnt namespace
-            util.puts "class name isn't '#{namespace}' (#{filePath})".yellow
+#            util.puts "class name isn't '#{namespace}' (#{filePath})".yellow
+            util.error "class name isn't '#{namespace}' (#{filePath})".yellow
 
           # stock file object
           files.push
@@ -251,9 +253,9 @@ class CoffeeMill
         if commander.map
           { js, v3SourceMap: map } = coffee.compile cs,
             sourceMap    : true
-#            generatedFile: "#{commander.name}#{postfix}.js"
-#            sourceRoot   : ''
-#            sourceFiles  : [ "#{commander.name}#{postfix}.coffee" ]
+            generatedFile: "#{commander.name}#{postfix}.js"
+            sourceRoot   : ''
+            sourceFiles  : [ "#{commander.name}#{postfix}.coffee" ]
         else
           js = coffee.compile cs
 
@@ -311,15 +313,34 @@ class CoffeeMill
 
   reportCompileError: (csName, cs, err) ->
     {location:{ first_line, first_column, last_line, last_column }} = err
-    lines = cs.split '\n'
-    code = lines.splice(first_line, last_line - first_line + 1).join('\n')
-    before = code.substring 0, first_column
-    error = code.substring first_column, last_column + 1
-    after = code.substring last_column + 1
+    lines = cs.split /\r?\n/
+    code = lines.splice first_line, 1
 
-    util.error """#{"#{csName}:#{first_line}:#{first_column} #{err.toString()}".red}
-      #{before}#{error.red.inverse}#{after}
+    unless first_line is last_line
+      last_line = first_line
+      last_column = code.length - 1
+    if last_column <= first_column
+      last_column = first_column
+
+
+    # formatting
+    mark = ''
+    while mark.length < first_column
+      mark += ' '
+    while mark.length <= last_column
+      mark += '^'
+    lineNumber = '' + first_line
+    nextLineNumber = ''
+    while nextLineNumber.length < lineNumber.length
+      nextLineNumber += ' '
+    util.error """
+      [#{csName}:#{first_line}:#{first_column}]
+      #{err.toString().red}
+      #{(lineNumber + '.').grey}#{code}
+      #{(nextLineNumber + '.').grey}#{mark.red}
       """
+    unless commander.watch
+      process.exit 1
 
   jsDoc: (code) ->
     properties = []
