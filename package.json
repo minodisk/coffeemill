@@ -25,7 +25,8 @@
     "colors"       : "0.6.0",
     "commander"    : "1.1.1",
     "jsdeferred"   : "0.4.0",
-    "uglify-js"    : "2.2.5"
+    "uglify-js"    : "2.2.5",
+    "dateformat"   : "1.2.3"
   },
   "bin"         : {
     "coffeemill": "./bin/coffeemill"
