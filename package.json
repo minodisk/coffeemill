@@ -1,6 +1,6 @@
 {
   "name"        : "coffeemill",
-  "version"     : "0.6.7",
+  "version"     : "0.6.8",
   "description" : "Directory based package compiler for CoffeeScript.",
   "tags"        : [
     "coffee script",
@@ -26,7 +26,7 @@
     "commander"    : "1.1.1",
     "jsdeferred"   : "0.4.0",
     "uglify-js"    : "2.2.5",
-    "dateformat"   : "1.2.3"
+    "dateformat"   : "1.0.6-1.2.3"
   },
   "bin"         : {
     "coffeemill": "./bin/coffeemill"
