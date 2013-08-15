@@ -9,6 +9,7 @@ colors = require 'colors'
 #ejs = require 'ejs'
 #jade = require 'jade'
 coffee = require 'coffee-script'
+dateformat = require 'dateformat'
 
 
 class CoffeeMill
@@ -27,8 +28,10 @@ class CoffeeMill
     list = (val) ->
       val.split ','
 
+    @package = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json')))
+
     commander
-      .version(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'))).version)
+      .version(@package.version)
       .usage('[options]')
       # required
       .option('-n, --name <basename>', 'output directory (defualt is \'\')', '')
@@ -62,7 +65,7 @@ class CoffeeMill
       process.stdout.write '\u001B[2J\u001B[0;0f'
 
     # Output current time
-    util.puts new Date().toString().underline
+    util.puts "CoffeeMill v#{@package.version}".bold + ' @' + dateformat('HH:MM:ss')
 
     unless commander.js or commander.uglify or commander.coffee or commander.map
       util.puts 'no output: please specify --js, --uglify, --coffee, or --map'.yellow
@@ -305,7 +308,7 @@ class CoffeeMill
             util.puts "#{type}: ".green + path.relative '.', outputPath
             counter++
 
-        util.puts "✔ #{counter} files complete.".cyan
+        util.puts "✔ #{counter} file#{if counter > 1 then 's' else ''} complete.".cyan
         unless commander.watch
           process.exit 0
 
