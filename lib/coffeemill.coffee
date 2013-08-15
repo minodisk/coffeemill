@@ -293,6 +293,7 @@ class CoffeeMill
             type += ' '
           outputs[i].type = type
 
+        counter = 0
         for outputDir in commander.output
           outputDir = path.resolve @cwd, outputDir
           # Make output directory
@@ -301,9 +302,10 @@ class CoffeeMill
           for {type, filename, data} in outputs
             outputPath = path.resolve @cwd, path.join outputDir, filename
             fs.writeFileSync outputPath, data, 'utf8'
-            util.puts "#{type}: ".cyan + path.relative '.', outputPath
+            util.puts "#{type}: ".green + path.relative '.', outputPath
+            counter++
 
-        util.puts '√'.green
+        util.puts "✔ #{counter} files complete.".cyan
         unless commander.watch
           process.exit 0
 
