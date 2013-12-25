@@ -1,8 +1,19 @@
-name = {
-  "space": {}
-}
-if window? then window.name = name
-if module? then module.exports = name
+___extend = (child, parent) ->
+  for key, val of parent
+    continue unless Object::hasOwnProperty.call parent, key
+    if Object::toString.call(val) is '[object Object]'
+      child[key] = {}
+      ___extend child[key], val
+    else
+      child[key] = val
+
+if window?
+  window.name ?= {}
+  name = window.name
+if module?.exports?
+  module.exports.name ?= {}
+  name = module.exports.name
+___extend name, {"space":{}}
 
 class name.space.Baz
 
