@@ -38,7 +38,7 @@ module.exports = (grunt) ->
     concat:
       bin:
         options:
-          banner: '#!/usr/bin/env node\n'
+          banner: '#!/usr/bin/env node\n\n'
         src: [ 'bin/coffeemill.js' ]
         dest: 'bin/coffeemill'
 
