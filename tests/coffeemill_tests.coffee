@@ -2,12 +2,12 @@ path = require 'path'
 fs = require 'fs'
 { spawn } = require 'child_process'
 chai = require 'chai'
-{ expect } = chai
+chai.should()
 
 
 valid =
   coffee: fs.readFileSync(path.join(__dirname, 'lib-valid/.coffee'), 'utf8')
-  js    : fs.readFileSync(path.join(__dirname, 'lib-valid/.js'), 'utf8')
+  js: fs.readFileSync(path.join(__dirname, 'lib-valid/.js'), 'utf8')
 
 
 rmdirSync = (dir) ->
@@ -21,14 +21,13 @@ rmdirSync = (dir) ->
 
 
 describe 'coffeemill', ->
-
   describe '-i src -o lib', ->
-
-    coffeemill = spawn path.join(__dirname, '..', 'bin/coffeemill'), [
+    coffeemill = spawn path.join(__dirname, '../bin/coffeemill'), [
       '-i', 'src'
       '-o', 'lib'
+      '-cj'
     ],
-      cwd   : __dirname
+      cwd: __dirname
 
     coffeemill.stdout.setEncoding 'utf8'
     coffeemill.stdout.on 'data', (data)->
@@ -43,8 +42,8 @@ describe 'coffeemill', ->
       coffeemill.once 'close', ->
         throw err if err isnt ''
 
-        expect(fs.readFileSync(path.join(__dirname, 'lib/.coffee'), 'utf8')).to.equal valid.coffee
-        expect(fs.readFileSync(path.join(__dirname, 'lib/.js'), 'utf8')).to.equal valid.js
+        fs.readFileSync(path.join(__dirname, 'lib/.coffee'), 'utf8').should.be.equal valid.coffee
+        fs.readFileSync(path.join(__dirname, 'lib/.js'), 'utf8').should.be.equal valid.js
         rmdirSync path.join(__dirname, 'lib')
 
         done()
