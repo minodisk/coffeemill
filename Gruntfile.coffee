@@ -1,4 +1,19 @@
 module.exports = (grunt) ->
+  tasks =
+    bin: [
+      'coffee:bin'
+      'concat:bin'
+      'clean:bin'
+    ]
+    lib: [
+      'coffee:lib'
+    ]
+    tests: [
+      'coffee:tests'
+      'mochaTest:tests'
+      'clean:tests'
+    ]
+
   grunt.initConfig
 
     pkg: grunt.file.readJSON 'package.json'
@@ -8,7 +23,7 @@ module.exports = (grunt) ->
         files: [
           'src/bin/*.coffee'
         ]
-        tasks: [ 'coffee:bin', 'concat:bin', 'clean:bin' ]
+        tasks: tasks.bin.concat tasks.tests
       lib:
         files: [
           'src/lib/*.coffee'
@@ -16,7 +31,7 @@ module.exports = (grunt) ->
           'tests/src/**/*.coffee'
           'tests/src/**/*.js'
         ]
-        tasks: [ 'coffee:lib', 'coffee:tests', 'mocha:tests', 'clean:tests' ]
+        tasks: tasks.lib.concat tasks.tests
 
     coffee:
       bin:
@@ -66,5 +81,5 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-mocha-test'
   grunt.loadNpmTasks 'grunt-release'
 
-  grunt.registerTask 'compile', [ 'coffee:bin', 'concat:bin', 'clean:bin', 'coffee:lib', 'coffee:tests', 'mochaTest:tests', 'clean:tests' ]
+  grunt.registerTask 'compile', tasks.bin.concat tasks.lib, tasks.tests
   grunt.registerTask 'default', [ 'compile', 'watch' ]
