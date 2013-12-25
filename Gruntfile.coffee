@@ -64,6 +64,7 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-concat'
   grunt.loadNpmTasks 'grunt-contrib-clean'
   grunt.loadNpmTasks 'grunt-mocha-test'
+  grunt.loadNpmTasks 'grunt-release'
 
   grunt.registerTask 'compile', [ 'coffee:bin', 'concat:bin', 'clean:bin', 'coffee:lib', 'coffee:tests', 'mochaTest:tests', 'clean:tests' ]
   grunt.registerTask 'default', [ 'compile', 'watch' ]
