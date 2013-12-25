@@ -1,24 +1,26 @@
 # CoffeeMill
 
-CoffeeScript package manager.
+CoffeeScript packager
 
 ## Features
 
 * Supports directory based package.
-* Resolves dependency of inheritance.
+* Resolves dependency of extension.
 * Concatenate multiple CoffeeScript files into one JavaScript file.
 
 ## Options
 
-* Watches source files recursively.
-* Minify JavaScript with UglifyJS.
 * Generate v3 source map.
 * Copy generated files.
 
-## Not implemented
+# Deprecated
 
-* Generate JSDoc
-* Running test after compiling.
+* Watches source files recursively. -> Use grunt-contrib-watch or grunt-este-watch
+* Minify JavaScript with UglifyJS. -> Use grunt-contrib-uglify
+
+## Others
+
+* How to test -> Use grunt test framework
 
 ### Installation
 

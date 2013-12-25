@@ -6,8 +6,6 @@ fs = require 'fs'
 commander = require 'commander'
 uglify = require 'uglify-js'
 colors = require 'colors'
-#ejs = require 'ejs'
-#jade = require 'jade'
 coffee = require 'coffee-script'
 dateformat = require 'dateformat'
 
@@ -44,10 +42,6 @@ class CoffeeMill
       .option('-c, --coffee', 'write CoffeeScript file (.coffee)')
       .option('-m, --map', 'write source maps file JavaScript to CoffeeScript (.map)')
       .option('-w, --watch', 'watch the change of input directory recursively')
-#      .option('--jsDoc', 'generate jsDoc')
-#      .option('--jsDocEngine <engine>', 'jsDoc template engine (default is \'ejs\')', 'ejs')
-#      .option('--jsDocTemplate <filename>', 'jsDoc template', 'README.ejs')
-#      .option('--jsDocOutput <filename>', 'jsDoc output', 'README.md')
       .parse(process.argv)
 
     @run()
@@ -355,65 +349,6 @@ class CoffeeMill
 
     unless commander.watch
       process.exit 1
-
-  jsDoc: (code) ->
-    properties = []
-    while r = CoffeeMill.rDocComment.exec code
-      comment = r[1]
-      name = r[2]
-      params = []
-      returns = []
-      comment = comment
-        .replace(/^[ \t]*\/\/.*$/g, '')
-        .replace(/^[ \t]*\* ?/g, '')
-      comment = comment.replace CoffeeMill.rParam, (matched, type, name, description) ->
-        optional = false
-        if r = name.match(/^\[(.*)\]$/)
-          optional = true
-          name = r[1]
-        r = name.split('=')
-        params.push
-          types       : type.split('|')
-          optional    : optional
-          name        : r[0]
-          defaultValue: r[1]
-          description : description
-        ''
-      comment = comment.replace CoffeeMill.rReturn, (matched, type, description) ->
-        returns.push
-          types      : type.split('|')
-          description: description
-        ''
-      continue if CoffeeMill.rCompletelyBlank.test comment
-      r2 = name.match /(\S+)\s*[:=]/
-      name = r2[1] if r2? [ 1 ]?
-      properties.push
-        name   : name
-        comment: comment
-        params : params
-        returns: returns
-
-    switch @makefile.jsdoc.engine
-      when 'ejs'
-        generateDoc = ejs.compile fs.readFileSync(@makefile.jsdoc.template, 'utf8'),
-          compileDebug: true
-        doc = generateDoc(
-          title     : rawFilename
-          properties: properties
-        )
-          .replace(CoffeeMill.rLineEndSpace, '')
-          .replace(CoffeeMill.rBreak, '\n\n')
-        fs.writeFileSync @makefile.jsdoc.filename, doc, 'utf8'
-      when 'jade'
-        generateDoc = jade.compile fs.readFileSync(@makefile.jsdoc.template, 'utf8'),
-          compileDebug: true
-        doc = generateDoc(
-          title     : rawFilename
-          properties: properties
-        )
-          .replace(CoffeeMill.rLineEndSpace, '')
-          .replace(CoffeeMill.rBreak, '\n\n')
-        fs.writeFileSync @makefile.jsdoc.filename, doc, 'utf8'
 
 
   indent: (code) ->
