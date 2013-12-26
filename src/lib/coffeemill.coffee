@@ -2,12 +2,14 @@ util = require 'util'
 path = require 'path'
 fs = require 'fs'
 { spawn } = require 'child_process'
+coffee = require 'coffee-script'
 { Deferred } = require 'jsdeferred'
-commander = require 'commander'
 uglify = require 'uglify-js'
 colors = require 'colors'
-coffee = require 'coffee-script'
 dateformat = require 'dateformat'
+commander = require 'commander'
+
+pkg = JSON.parse fs.readFileSync path.join __dirname, '..', 'package.json'
 
 
 class CoffeeMill
@@ -22,29 +24,7 @@ class CoffeeMill
   @rLineEndSpace   : /[ \t]+$/g
   @rBreak          : /[\r\n]{3,}/g
 
-  constructor: (@cwd) ->
-    list = (val) ->
-      val.split ','
-
-    @package = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json')))
-
-    commander
-      .version(@package.version)
-      .usage('[options]')
-      # required
-      .option('-n, --name [basename]', 'output directory (defualt is \'main\')', 'main')
-      .option('-i, --input <dirnames>', 'output directory (defualt is \'src\')', list, [ 'src' ])
-      .option('-o, --output <dirnames>', 'output directory (defualt is \'lib\')', list, [ 'lib' ])
-      # optional
-      .option('-v, --ver <version>', 'file version: supports version string, \'gitTag\' or \'none\' (default is \'none\')', 'none')
-      .option('-j, --js', 'write JavaScript file (.js)')
-      .option('-u, --uglify', 'write uglified JavaScript file (.min.js)')
-      .option('-c, --coffee', 'write CoffeeScript file (.coffee)')
-      .option('-m, --map', 'write source maps file JavaScript to CoffeeScript (.map)')
-      .option('-w, --watch', 'watch the change of input directory recursively')
-      .parse(process.argv)
-
-    @run()
+  constructor: (@options) ->
 
   changed: =>
     clearTimeout @timeoutId
@@ -55,13 +35,13 @@ class CoffeeMill
   run: ->
     # Clear entire screen
     # Move cursor to screen location 0,0
-    if commander.watch
-      process.stdout.write '\u001B[2J\u001B[0;0f'
+#    if @options.watch
+#      process.stdout.write '\u001B[2J\u001B[0;0f'
 
     # Output current time
-    util.puts "CoffeeMill v#{@package.version}".bold + ' @' + dateformat('HH:MM:ss')
+    util.puts "CoffeeMill v#{pkg.version}".bold + ' @' + dateformat('HH:MM:ss')
 
-    unless commander.js or commander.uglify or commander.coffee or commander.map
+    unless @options.js or @options.uglify or @options.coffee or @options.map
       util.puts 'no output: please specify --js, --uglify, --coffee, or --map'.yellow
 
     @scanInput()
@@ -74,7 +54,7 @@ class CoffeeMill
     @watchers = []
 
     @hasError = false
-    @files = @findFiles commander.input, if commander.watch then @changed else null
+    @files = @findFiles @options.input, if @options.watch then @changed else null
 #    fs.watch @makefile.jsdoc.template, @changed if @makefile.jsdoc?.template?
 
   findFiles: (dirs, change, basedir, files = []) ->
@@ -152,13 +132,13 @@ class CoffeeMill
 
     Deferred
       .next =>
-        switch commander.ver
+        switch @options.ver
           when 'none'
             ''
           when 'gitTag'
             @gitTag()
           else
-            commander.ver
+            @options.ver
       .error (err) =>
         ''
       .next (version) =>
@@ -209,10 +189,10 @@ class CoffeeMill
 
           # add package namespace to export list
           exp = exports
-          for pkg in packages
-            unless exp[pkg]?
-              exp[pkg] = {}
-            exp = exp[pkg]
+          for packageNamespace in packages
+            unless exp[packageNamespace]?
+              exp[packageNamespace] = {}
+            exp = exp[packageNamespace]
 
         # generate export code
         cs = []
@@ -246,41 +226,41 @@ class CoffeeMill
           ]
         )
         .join('\n\n')
-        csName = "#{commander.name}#{postfix}.coffee"
+        csName = "#{@options.name}#{postfix}.coffee"
 
 
         outputs = []
 
-        if commander.coffee
+        if @options.coffee
           outputs.push
             type    : 'coffee'
             filename: csName
             data    : cs
 
-        if commander.map
+        if @options.map
           { js, v3SourceMap: map } = coffee.compile cs,
             sourceMap    : true
-            generatedFile: "#{commander.name}#{postfix}.js"
+            generatedFile: "#{@options.name}#{postfix}.js"
             sourceRoot   : ''
-            sourceFiles  : [ "#{commander.name}#{postfix}.coffee" ]
+            sourceFiles  : [ "#{@options.name}#{postfix}.coffee" ]
         else
           js = coffee.compile cs
 
-        if commander.js
+        if @options.js
           if map?
-            js += "\n/*\n//@ sourceMappingURL=#{commander.name}#{postfix}.map\n*/"
+            js += "\n/*\n//@ sourceMappingURL=#{@options.name}#{postfix}.map\n*/"
           outputs.push
             type    : 'js'
-            filename: "#{commander.name}#{postfix}.js"
+            filename: "#{@options.name}#{postfix}.js"
             data    : js
 
         if map?
           outputs.push
             type    : 'source map'
-            filename: "#{commander.name}#{postfix}.map"
+            filename: "#{@options.name}#{postfix}.map"
             data    : map
 
-        if commander.uglify
+        if @options.uglify
           { code: uglified } = uglify.minify js,
             fromString: true
           if postfix is ''
@@ -289,7 +269,7 @@ class CoffeeMill
             ext = '.min.js'
           outputs.push
             type    : 'uglify'
-            filename: "#{commander.name}#{postfix}#{ext}"
+            filename: "#{@options.name}#{postfix}#{ext}"
             data    : uglified
 
         len = 0
@@ -300,20 +280,21 @@ class CoffeeMill
             type += ' '
           outputs[i].type = type
 
+        cwd = process.cwd()
         counter = 0
-        for outputDir in commander.output
-          outputDir = path.resolve @cwd, outputDir
+        for outputDir in @options.output
+          outputDir = path.resolve cwd, outputDir
           # Make output directory
           fs.mkdirSync outputDir unless fs.existsSync outputDir
 
           for {type, filename, data} in outputs
-            outputPath = path.resolve @cwd, path.join outputDir, filename
+            outputPath = path.resolve cwd, path.join outputDir, filename
             fs.writeFileSync outputPath, data, 'utf8'
             util.puts "#{type}: ".green + path.relative '.', outputPath
             counter++
 
         util.puts "✔ #{counter} file#{if counter > 1 then 's' else ''} complete.".cyan
-        unless commander.watch
+        unless @options.watch
           process.exit 0
 
       .error (err) =>
@@ -357,7 +338,7 @@ class CoffeeMill
         #{err.toString().red}
         """
 
-    unless commander.watch
+    unless @options.watch
       process.exit 1
 
 
@@ -395,5 +376,26 @@ class CoffeeMill
     d
 
 
-exports.run = ->
-  new CoffeeMill process.cwd()
+module.exports =
+  CoffeeMill: CoffeeMill
+
+  run: ->
+
+    list = (val) -> val.split ','
+
+    commander
+    .version(pkg.version)
+    .usage('[options]')
+    .option('-i, --input <dirnames>', 'output directory (defualt is \'src\')', list, [ 'src' ])
+    .option('-o, --output <dirnames>', 'output directory (defualt is \'lib\')', list, [ 'lib' ])
+    .option('-n, --name [basename]', 'output directory (defualt is \'main\')', 'main')
+    .option('-v, --ver <version>', 'file version: supports version string, \'gitTag\' or \'none\' (default is \'none\')', 'none')
+    .option('-j, --js', 'write JavaScript file (.js)')
+    .option('-u, --uglify', 'write uglified JavaScript file (.min.js)')
+    .option('-c, --coffee', 'write CoffeeScript file (.coffee)')
+    .option('-m, --map', 'write source maps file JavaScript to CoffeeScript (.map)')
+    .option('-w, --watch', 'watch the change of input directory recursively')
+    .parse(process.argv)
+
+    new CoffeeMill(commander).run()
+
