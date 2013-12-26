@@ -41,9 +41,6 @@ class CoffeeMill
     # Output current time
     util.puts "CoffeeMill v#{pkg.version}".bold + ' @' + dateformat('HH:MM:ss')
 
-    unless @options.js or @options.uglify or @options.coffee or @options.map
-      util.puts 'no output: please specify --js, --uglify, --coffee, or --map'.yellow
-
     @scanInput()
     @compile()
 
@@ -390,7 +387,7 @@ module.exports =
     .option('-o, --output <dirnames>', 'output directory (defualt is \'lib\')', list, [ 'lib' ])
     .option('-n, --name [basename]', 'output directory (defualt is \'main\')', 'main')
     .option('-v, --ver <version>', 'file version: supports version string, \'gitTag\' or \'none\' (default is \'none\')', 'none')
-    .option('-j, --js', 'write JavaScript file (.js)')
+    .option('-j, --js', 'write JavaScript file (.js)', true)
     .option('-u, --uglify', 'write uglified JavaScript file (.min.js)')
     .option('-c, --coffee', 'write CoffeeScript file (.coffee)')
     .option('-m, --map', 'write source maps file JavaScript to CoffeeScript (.map)')
