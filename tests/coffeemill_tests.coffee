@@ -43,6 +43,7 @@ describe 'coffeemill', ->
         new Parent().inheritance().should.be.equal 'Parent'
         new Child().inheritance().should.be.equal 'Parent->Child'
         new GrundChild().inheritance().should.be.equal 'Parent->Child->GrundChild'
+        rmdirSync path.join(__dirname, 'lib')
         done()
 
 
