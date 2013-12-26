@@ -9,6 +9,8 @@ valid =
   coffee: fs.readFileSync(path.join(__dirname, 'lib_valid/main.coffee'), 'utf8')
   js: fs.readFileSync(path.join(__dirname, 'lib_valid/main.js'), 'utf8')
 
+coffeemillBin = path.join __dirname, '../bin/coffeemill'
+
 
 rmdirSync = (dir) ->
   for file in fs.readdirSync dir
@@ -21,8 +23,15 @@ rmdirSync = (dir) ->
 
 
 describe 'coffeemill', ->
+  describe '[no option]', ->
+    coffeemill = spawn coffeemillBin, null, cwd: __dirname
+    it 'should make .js file', (done) ->
+      coffeemill.once 'close', ->
+        fs.existsSync(path.join __dirname, 'lib/main.js').should.be.true
+        done()
+
   describe '-i src -o lib -cj', ->
-    coffeemill = spawn path.join(__dirname, '../bin/coffeemill'), [
+    coffeemill = spawn coffeemillBin, [
       '-i', 'src'
       '-o', 'lib'
       '-cj'

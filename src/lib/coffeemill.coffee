@@ -41,6 +41,9 @@ class CoffeeMill
     # Output current time
     util.puts "CoffeeMill v#{pkg.version}".bold + ' @' + dateformat('HH:MM:ss')
 
+    unless @options.js or @options.uglify or @options.coffee or @options.map
+      @options.js = true
+
     @scanInput()
     @compile()
 

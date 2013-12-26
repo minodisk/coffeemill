@@ -1,19 +1,4 @@
 module.exports = (grunt) ->
-  tasks =
-    bin: [
-      'coffee:bin'
-      'concat:bin'
-      'clean:bin'
-    ]
-    lib: [
-      'coffee:lib'
-    ]
-    tests: [
-      'coffee:tests'
-      'mochaTest:tests'
-      'clean:tests'
-    ]
-
   grunt.initConfig
 
     pkg: grunt.file.readJSON 'package.json'
@@ -23,7 +8,10 @@ module.exports = (grunt) ->
         files: [
           'src/bin/*.coffee'
         ]
-        tasks: tasks.bin.concat tasks.tests
+        tasks: [
+          'bin'
+          'tests'
+        ]
       lib:
         files: [
           'src/lib/*.coffee'
@@ -31,46 +19,51 @@ module.exports = (grunt) ->
           'tests/src/**/*.coffee'
           'tests/src/**/*.js'
         ]
-        tasks: tasks.lib.concat tasks.tests
+        tasks: [
+          'lib'
+          'tests'
+        ]
 
     coffee:
-      bin:
+      bin  :
         options:
           bare: true
-        files: [
+        files  : [
           expand: true
-          cwd: 'src/bin'
-          src: [ '*.coffee' ]
-          dest: 'bin'
-          ext: '.js'
+          cwd   : 'src/bin'
+          src   : [ '*.coffee' ]
+          dest  : 'bin'
+          ext   : '.js'
         ]
-      lib:
+      lib  :
         files: [
           expand: true
-          cwd: 'src/lib'
-          src: [ '*.coffee' ]
-          dest: 'lib'
-          ext: '.js'
+          cwd   : 'src/lib'
+          src   : [ '*.coffee' ]
+          dest  : 'lib'
+          ext   : '.js'
         ]
       tests:
         files: [
           expand: true
-          src: [ 'tests/*.coffee' ]
-          ext: '.js'
+          src   : [ 'tests/*.coffee' ]
+          ext   : '.js'
         ]
 
     concat:
       bin:
         options:
           banner: '#!/usr/bin/env node\n\n'
-        src: [ 'bin/coffeemill.js' ]
-        dest: 'bin/coffeemill'
+        src    : [ 'bin/coffeemill.js' ]
+        dest   : 'bin/coffeemill'
 
     clean:
-      bin: [ 'bin/*.js' ]
+      bin  : [ 'bin/*.js' ]
       tests: [ 'tests/*.js' ]
 
-    mochaTest:
+    simplemocha:
+      options:
+        reporter: 'tap'
       tests: [ 'tests/**/*_tests.js' ]
 
 
@@ -78,8 +71,25 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-coffee'
   grunt.loadNpmTasks 'grunt-contrib-concat'
   grunt.loadNpmTasks 'grunt-contrib-clean'
-  grunt.loadNpmTasks 'grunt-mocha-test'
+  grunt.loadNpmTasks 'grunt-simple-mocha'
   grunt.loadNpmTasks 'grunt-release'
 
-  grunt.registerTask 'compile', tasks.bin.concat tasks.lib, tasks.tests
-  grunt.registerTask 'default', [ 'compile', 'watch' ]
+  grunt.registerTask 'bin', [
+    'coffee:bin'
+    'concat:bin'
+    'clean:bin'
+  ]
+  grunt.registerTask 'lib', [
+    'coffee:lib'
+  ]
+  grunt.registerTask 'tests', [
+    'coffee:tests'
+    'simplemocha:tests'
+    'clean:tests'
+  ]
+  grunt.registerTask 'run', [
+    'bin'
+    'lib'
+    'tests'
+  ]
+  grunt.registerTask 'default', [ 'run', 'watch' ]
