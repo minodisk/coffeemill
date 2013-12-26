@@ -32,7 +32,7 @@ class CoffeeMill
       .version(@package.version)
       .usage('[options]')
       # required
-      .option('-n, --name <basename>', 'output directory (defualt is \'\')', '')
+      .option('-n, --name [basename]', 'output directory (defualt is \'main\')', 'main')
       .option('-i, --input <dirnames>', 'output directory (defualt is \'src\')', list, [ 'src' ])
       .option('-o, --output <dirnames>', 'output directory (defualt is \'lib\')', list, [ 'lib' ])
       # optional
@@ -118,7 +118,6 @@ class CoffeeMill
           namespaces = packages.concat [name]
           namespace = namespaces.join '.'
           if className? and className isnt namespace
-#            util.puts "class name isn't '#{namespace}' (#{filePath})".yellow
             util.error "class name isn't '#{namespace}' (#{filePath})".yellow
 
           # stock file object
@@ -205,37 +204,48 @@ class CoffeeMill
 
         codes = []
         exports = {}
-        for {code, name, className, packages, namespace} in @files
+        for { code, name, className, packages, namespace } in @files
           codes.push code
 
           # add package namespace to export list
           exp = exports
           for pkg in packages
-            exp[pkg] = {} unless exp[pkg]?
+            unless exp[pkg]?
+              exp[pkg] = {}
             exp = exp[pkg]
 
         # generate export code
-        for k, v of exports
-          codes.unshift """
-            if window?
-              window.#{k} ?= {}
-              #{k} = window.#{k}
-            if module?.exports?
-              module.exports.#{k} ?= {}
-              #{k} = module.exports.#{k}
-            ___extend #{k}, #{JSON.stringify v}
+        cs = []
+        .concat(
+          do -> "#{name} = #{JSON.stringify obj}" for name, obj of exports
+          [
             """
-        codes.unshift """
-            ___extend = (child, parent) ->
-              for key, val of parent
-                continue unless Object::hasOwnProperty.call parent, key
-                if Object::toString.call(val) is '[object Object]'
-                  child[key] = {}
-                  ___extend child[key], val
-                else
-                  child[key] = val
-          """
-        cs = codes.join '\n\n'
+            ___exports = #{JSON.stringify exports}
+            """
+          ],
+          do ->
+            codes.map (code) ->
+              code.replace /class\s+(\S+)/g, '___exports.$1 = class $1'
+          ,
+          [
+            """
+            do ->
+              ___extend = (child, parent) ->
+                for key, val of parent
+                  continue unless Object::hasOwnProperty.call parent, key
+                  if Object::toString.call(val) is '[object Object]'
+                    child[key] = {}
+                    ___extend child[key], val
+                  else
+                    child[key] = val
+              if window?
+                ___extend window, ___exports
+              if module?.exports?
+                ___extend module.exports, ___exports
+            """
+          ]
+        )
+        .join('\n\n')
         csName = "#{commander.name}#{postfix}.coffee"
 
 

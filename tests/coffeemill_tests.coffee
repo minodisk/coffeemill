@@ -6,8 +6,8 @@ chai.should()
 
 
 valid =
-  coffee: fs.readFileSync(path.join(__dirname, 'lib-valid/.coffee'), 'utf8')
-  js: fs.readFileSync(path.join(__dirname, 'lib-valid/.js'), 'utf8')
+  coffee: fs.readFileSync(path.join(__dirname, 'lib_valid/main.coffee'), 'utf8')
+  js: fs.readFileSync(path.join(__dirname, 'lib_valid/main.js'), 'utf8')
 
 
 rmdirSync = (dir) ->
@@ -21,7 +21,7 @@ rmdirSync = (dir) ->
 
 
 describe 'coffeemill', ->
-  describe '-i src -o lib', ->
+  describe '-i src -o lib -cj', ->
     coffeemill = spawn path.join(__dirname, '../bin/coffeemill'), [
       '-i', 'src'
       '-o', 'lib'
@@ -30,20 +30,27 @@ describe 'coffeemill', ->
       cwd: __dirname
 
     coffeemill.stdout.setEncoding 'utf8'
-    coffeemill.stdout.on 'data', (data)->
-      console.log data
+    coffeemill.stdout.on 'data', (data)-> console.log data
 
     err = ''
     coffeemill.stderr.setEncoding 'utf8'
     coffeemill.stderr.on 'data', (data)->
       err += data
 
-    it 'should be output valid code', (done) ->
+    it 'should exports all level classes', (done) ->
       coffeemill.once 'close', ->
-        throw err if err isnt ''
-
-        fs.readFileSync(path.join(__dirname, 'lib/.coffee'), 'utf8').should.be.equal valid.coffee
-        fs.readFileSync(path.join(__dirname, 'lib/.js'), 'utf8').should.be.equal valid.js
-        rmdirSync path.join(__dirname, 'lib')
-
+        { Parent, name: { Child, space: { GrundChild }}} = require './lib/main'
+        new Parent().inheritance().should.be.equal 'Parent'
+        new Child().inheritance().should.be.equal 'Parent->Child'
+        new GrundChild().inheritance().should.be.equal 'Parent->Child->GrundChild'
         done()
+
+
+#      coffeemill.once 'close', ->
+#        throw err if err isnt ''
+#
+#        fs.readFileSync(path.join(__dirname, 'lib/main.coffee'), 'utf8').should.be.equal valid.coffee
+#        fs.readFileSync(path.join(__dirname, 'lib/main.js'), 'utf8').should.be.equal valid.js
+#        rmdirSync path.join(__dirname, 'lib')
+#
+#        done()

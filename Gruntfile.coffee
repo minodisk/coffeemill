@@ -55,7 +55,7 @@ module.exports = (grunt) ->
       tests:
         files: [
           expand: true
-          src: ['tests/*.coffee']
+          src: [ 'tests/*.coffee' ]
           ext: '.js'
         ]
 
@@ -71,7 +71,7 @@ module.exports = (grunt) ->
       tests: [ 'tests/*.js' ]
 
     mochaTest:
-      tests: ['tests/**/*_tests.js']
+      tests: [ 'tests/**/*_tests.js' ]
 
 
   grunt.loadNpmTasks 'grunt-contrib-watch'
