@@ -5,7 +5,7 @@ fs = require 'fs'
 coffee = require 'coffee-script'
 { Deferred } = require 'jsdeferred'
 uglify = require 'uglify-js'
-colors = require 'colors'
+#colors = require 'colors'
 dateformat = require 'dateformat'
 commander = require 'commander'
 
@@ -25,6 +25,12 @@ class CoffeeMill
   @rBreak          : /[\r\n]{3,}/g
 
   constructor: (@options) ->
+    options.input ?= [ 'src' ]
+    options.output ?= [ 'lib' ]
+    options.name ?= 'main'
+    options.ver ?= 'none'
+    if !options.js? and !options.uglify? and !options.coffee? and !options.map?
+      options.js = true
 
   changed: =>
     clearTimeout @timeoutId
@@ -39,10 +45,7 @@ class CoffeeMill
 #      process.stdout.write '\u001B[2J\u001B[0;0f'
 
     # Output current time
-    util.puts "CoffeeMill v#{pkg.version}".bold + ' @' + dateformat('HH:MM:ss')
-
-    unless @options.js or @options.uglify or @options.coffee or @options.map
-      @options.js = true
+#    util.puts "CoffeeMill v#{pkg.version}".bold + ' @' + dateformat('HH:MM:ss')
 
     @scanInput()
     @compile()
@@ -98,7 +101,7 @@ class CoffeeMill
           namespaces = packages.concat [name]
           namespace = namespaces.join '.'
           if className? and className isnt namespace
-            util.error "class name isn't '#{namespace}' (#{filePath})".yellow
+            util.error "class name isn't '#{namespace}' (#{filePath})"
 
           # stock file object
           files.push
@@ -139,15 +142,15 @@ class CoffeeMill
             @gitTag()
           else
             @options.ver
+
       .error (err) =>
-        ''
+        utils.error 'fail phase 1'
       .next (version) =>
         if version isnt ''
           util.puts 'version: ' + version
           postfix = "-#{version}"
         else
           postfix = ''
-
 
         # resolve dependency
         normalFiles = []
@@ -290,12 +293,12 @@ class CoffeeMill
           for {type, filename, data} in outputs
             outputPath = path.resolve cwd, path.join outputDir, filename
             fs.writeFileSync outputPath, data, 'utf8'
-            util.puts "#{type}: ".green + path.relative '.', outputPath
+            util.puts "#{type}: " + path.relative '.', outputPath
             counter++
 
-        util.puts "✔ #{counter} file#{if counter > 1 then 's' else ''} complete.".cyan
-        unless @options.watch
-          process.exit 0
+        util.puts "✔ #{counter} file#{if counter > 1 then 's' else ''} complete."
+#        unless @options.watch
+#          process.exit 0
 
       .error (err) =>
         if err.location?
@@ -389,7 +392,7 @@ module.exports =
     .option('-i, --input <dirnames>', 'output directory (defualt is \'src\')', list, [ 'src' ])
     .option('-o, --output <dirnames>', 'output directory (defualt is \'lib\')', list, [ 'lib' ])
     .option('-n, --name [basename]', 'output directory (defualt is \'main\')', 'main')
-    .option('-v, --ver <version>', 'file version: supports version string, \'gitTag\' or \'none\' (default is \'none\')', 'none')
+    .option('-v, --ver <version>', 'file version: supports version string, \'gitTag\' or \'none\' (default is \'\')', '')
     .option('-j, --js', 'write JavaScript file (.js)', true)
     .option('-u, --uglify', 'write uglified JavaScript file (.min.js)')
     .option('-c, --coffee', 'write CoffeeScript file (.coffee)')
