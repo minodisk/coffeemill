@@ -19,7 +19,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "colors": ">=0.6.0",
     "commander": ">=1.1.1",
     "dateformat": ">=1.0.6-1.2.3",
     "jsdeferred": "~0.4.0",
