@@ -23,12 +23,13 @@ rmdirSync = (dir) ->
 
 
 describe 'coffeemill', ->
-  describe '[no option]', ->
-    coffeemill = spawn coffeemillBin, null, cwd: __dirname
-    it 'should make .js file', (done) ->
-      coffeemill.once 'close', ->
-        fs.existsSync(path.join __dirname, 'lib/main.js').should.be.true
-        done()
+#  describe '[no option]', ->
+#    coffeemill = spawn coffeemillBin, null, cwd: __dirname
+#    it 'should make .js file', (done) ->
+#      coffeemill.once 'close', ->
+#        fs.existsSync(path.join __dirname, 'lib/main.js').should.be.true
+#        rmdirSync path.join(__dirname, 'lib')
+#        done()
 
   describe '-i src -o lib -cj', ->
     coffeemill = spawn coffeemillBin, [

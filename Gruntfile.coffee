@@ -72,6 +72,7 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-concat'
   grunt.loadNpmTasks 'grunt-contrib-clean'
   grunt.loadNpmTasks 'grunt-simple-mocha'
+  grunt.loadNpmTasks 'grunt-mocha-test'
   grunt.loadNpmTasks 'grunt-release'
 
   grunt.registerTask 'bin', [

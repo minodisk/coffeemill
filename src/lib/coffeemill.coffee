@@ -1,18 +1,15 @@
-util = require 'util'
 path = require 'path'
 fs = require 'fs'
 { spawn } = require 'child_process'
+{ EventEmitter } = require 'events'
 coffee = require 'coffee-script'
 { Deferred } = require 'jsdeferred'
 uglify = require 'uglify-js'
-#colors = require 'colors'
-dateformat = require 'dateformat'
-commander = require 'commander'
 
 pkg = JSON.parse fs.readFileSync path.join __dirname, '..', 'package.json'
 
 
-class CoffeeMill
+class CoffeeMill extends EventEmitter
 
   EXT_NAMES = [ '.coffee' ]
 
@@ -28,7 +25,7 @@ class CoffeeMill
     options.input ?= [ 'src' ]
     options.output ?= [ 'lib' ]
     options.name ?= 'main'
-    options.ver ?= 'none'
+    options.ver ?= ''
     if !options.js? and !options.uglify? and !options.coffee? and !options.map?
       options.js = true
 
@@ -39,16 +36,9 @@ class CoffeeMill
     , 500
 
   run: ->
-    # Clear entire screen
-    # Move cursor to screen location 0,0
-#    if @options.watch
-#      process.stdout.write '\u001B[2J\u001B[0;0f'
-
-    # Output current time
-#    util.puts "CoffeeMill v#{pkg.version}".bold + ' @' + dateformat('HH:MM:ss')
-
     @scanInput()
     @compile()
+    @
 
   scanInput: ->
     if @watchers?
@@ -59,9 +49,11 @@ class CoffeeMill
     @hasError = false
     @files = @findFiles @options.input, if @options.watch then @changed else null
 #    fs.watch @makefile.jsdoc.template, @changed if @makefile.jsdoc?.template?
+    @
 
   findFiles: (dirs, change, basedir, files = []) ->
     isBasedir = basedir?
+
     for dir in dirs
       if isBasedir
         dirPath = dir
@@ -69,6 +61,7 @@ class CoffeeMill
         dirPath = basedir = dir
 
       stats = fs.statSync dirPath
+
       if stats.isFile()
         # when extname is relevant, push filepath into result
         filePath = dirPath
@@ -101,7 +94,7 @@ class CoffeeMill
           namespaces = packages.concat [name]
           namespace = namespaces.join '.'
           if className? and className isnt namespace
-            util.error "class name isn't '#{namespace}' (#{filePath})"
+            @emit 'warn', "class name isn't '#{namespace}' (#{filePath})"
 
           # stock file object
           files.push
@@ -142,12 +135,10 @@ class CoffeeMill
             @gitTag()
           else
             @options.ver
-
       .error (err) =>
-        utils.error 'fail phase 1'
+        @emit 'error', 'fail to fetch version'
       .next (version) =>
         if version isnt ''
-          util.puts 'version: ' + version
           postfix = "-#{version}"
         else
           postfix = ''
@@ -293,22 +284,22 @@ class CoffeeMill
           for {type, filename, data} in outputs
             outputPath = path.resolve cwd, path.join outputDir, filename
             fs.writeFileSync outputPath, data, 'utf8'
-            util.puts "#{type}: " + path.relative '.', outputPath
+            @emit 'created', path.relative '.', outputPath
             counter++
 
-        util.puts "✔ #{counter} file#{if counter > 1 then 's' else ''} complete."
-#        unless @options.watch
-#          process.exit 0
+        @emit 'complete', counter
 
       .error (err) =>
         if err.location?
           @reportCompileError csName, cs, err
         else
-          util.error "#{err.stack}".red
+          @emit 'error', "#{err.stack}"
+
+    @
 
   reportCompileError: (csName, cs, err) ->
     if err.location?
-      {location:{ first_line, first_column, last_line, last_column }} = err
+      { location: { first_line, first_column, last_line, last_column }} = err
       lines = cs.split /\r?\n/
       code = lines.splice first_line, 1
 
@@ -329,16 +320,16 @@ class CoffeeMill
       nextLineNumber = ''
       while nextLineNumber.length < lineNumber.length
         nextLineNumber += ' '
-      util.error """
+      @emit 'error', """
         #{csName}:#{first_line}:#{first_column}
-        #{err.toString().red}
-        #{(lineNumber + '.').grey}#{code}
-        #{(nextLineNumber + '.').grey}#{mark.red}
+        #{err}
+        #{(lineNumber + '.')}#{code}
+        #{(nextLineNumber + '.')}#{mark}
         """
     else
-      util.error """
+      @emit 'error', """
         CoffeeScript Compiler
-        #{err.toString().red}
+        #{err}
         """
 
     unless @options.watch
@@ -383,6 +374,8 @@ module.exports =
   CoffeeMill: CoffeeMill
 
   run: ->
+    util = require 'util'
+    commander = require 'commander'
 
     list = (val) -> val.split ','
 
@@ -400,5 +393,13 @@ module.exports =
     .option('-w, --watch', 'watch the change of input directory recursively')
     .parse(process.argv)
 
-    new CoffeeMill(commander).run()
-
+    new CoffeeMill(commander)
+    .run()
+    .on 'warn', (message) ->
+        util.puts message
+    .on 'error', (message) ->
+        util.puts message
+    .on 'created', (filepath) ->
+        util.puts "File #{filepath} created"
+    .on 'complete', (filenum) ->
+        util.puts "Done without errors"
