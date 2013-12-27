@@ -188,38 +188,30 @@ class CoffeeMill extends EventEmitter
               exp[packageNamespace] = {}
             exp = exp[packageNamespace]
 
-        # generate export code
-        cs = []
-        .concat(
-          do -> "#{name} = #{JSON.stringify obj}" for name, obj of exports
-          [
+        # generate exports codes
+        exportsCodes = []
+        exportsCodes.push """
+            ___exports = if module?.exports? then module.exports else if window? then window else {}
+            ___extend = (child, parent) ->
+              for key, val of parent
+                continue unless Object::hasOwnProperty.call parent, key
+                if Object::toString.call(val) is '[object Object]'
+                  child[key] = {}
+                  ___extend child[key], val
+                else
+                  child[key] = val
             """
-            ___exports = #{JSON.stringify exports}
+        for k, v of exports
+          exportsCodes.push """
+            ___exports.#{k} ?= {}
+            #{k} = ___exports.#{k}
+            ___extend #{k}, #{JSON.stringify v}
             """
-          ],
-          do ->
-            codes.map (code) ->
-              code.replace /class\s+(\S+)/g, '___exports.$1 = class $1'
-          ,
-          [
-            """
-            do ->
-              ___extend = (child, parent) ->
-                for key, val of parent
-                  continue unless Object::hasOwnProperty.call parent, key
-                  if Object::toString.call(val) is '[object Object]'
-                    child[key] = {}
-                    ___extend child[key], val
-                  else
-                    child[key] = val
-              if window?
-                ___extend window, ___exports
-              if module?.exports?
-                ___extend module.exports, ___exports
-            """
-          ]
-        )
-        .join('\n\n')
+
+        cs = exportsCodes.concat(
+          codes.map (code) ->
+            code.replace /class\s+(\S+)/g, '___exports.$1 = class $1'
+        ).join '\n\n'
         csName = "#{@options.name}#{postfix}.coffee"
 
 
