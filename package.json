@@ -1,41 +1,41 @@
 {
-  "name"           : "coffeemill",
-  "version"        : "0.7.4",
-  "description"    : "CoffeeScript packager",
-  "tags"           : [
+  "name": "coffeemill",
+  "version": "0.7.5",
+  "description": "CoffeeScript packager",
+  "tags": [
     "coffeescript",
     "package"
   ],
-  "author"         : {
-    "name" : "Daisuke Mino",
+  "author": {
+    "name": "Daisuke Mino",
     "email": "daisuke.mino@gmail.com"
   },
-  "repository"     : {
+  "repository": {
     "type": "git",
-    "url" : "https://minodisk@github.com/minodisk/coffeemill.git"
+    "url": "https://minodisk@github.com/minodisk/coffeemill.git"
   },
-  "engines"        : {
+  "engines": {
     "node": ">=0.9.0"
   },
-  "license"        : "MIT",
-  "bin"            : {
+  "license": "MIT",
+  "bin": {
     "coffeemill": "./bin/coffeemill"
   },
-  "main"           : "./lib/coffeemill",
-  "dependencies"   : {
-    "commander"    : "~2.1.0",
-    "dateformat"   : "~1.0.7-1.2.3",
-    "jsdeferred"   : "~0.4.0",
-    "uglify-js"    : "~2.4.8",
+  "main": "./lib/coffeemill",
+  "dependencies": {
+    "commander": "~2.1.0",
+    "dateformat": "~1.0.7-1.2.3",
+    "jsdeferred": "~0.4.0",
+    "uglify-js": "~2.4.8",
     "coffee-script": "~1.6.3"
   },
   "devDependencies": {
-    "grunt"               : "~0.4.2",
-    "grunt-contrib-clean" : "~0.5.0",
+    "grunt": "~0.4.2",
+    "grunt-contrib-clean": "~0.5.0",
     "grunt-contrib-coffee": "~0.8.0",
     "grunt-contrib-concat": "~0.3.0",
-    "grunt-contrib-watch" : "~0.5.3",
-    "grunt-simple-mocha"  : "~0.4.0",
-    "grunt-release"       : "~0.6.0"
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt-simple-mocha": "~0.4.0",
+    "grunt-release": "~0.6.0"
   }
 }
