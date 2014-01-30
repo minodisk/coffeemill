@@ -22,7 +22,8 @@
     "commander": ">=1.1.1",
     "dateformat": ">=1.0.6-1.2.3",
     "jsdeferred": "~0.4.0",
-    "uglify-js": "~2.4.8"
+    "uglify-js": "~2.4.8",
+    "coffee-script": "~1.7.0"
   },
   "bin": {
     "coffeemill": "./bin/coffeemill"
@@ -35,6 +36,7 @@
     "grunt-contrib-concat": "~0.3.0",
     "grunt-contrib-watch": "~0.5.3",
     "grunt-simple-mocha": "~0.4.0",
-    "grunt-release": "~0.6.0"
+    "grunt-release": "~0.6.0",
+    "chai": "~1.9.0"
   }
 }
