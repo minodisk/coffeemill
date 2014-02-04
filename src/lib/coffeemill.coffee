@@ -137,7 +137,7 @@ class CoffeeMill extends EventEmitter
           else
             @options.ver
       .error (err) =>
-        @emit 'error', 'fail to fetch version'
+        @emit 'fail', 'fail to fetch version'
       .next (version) =>
         if version isnt ''
           postfix = "-#{version}"
@@ -286,7 +286,7 @@ class CoffeeMill extends EventEmitter
         if err.location?
           @reportCompileError csName, cs, err
         else
-          @emit 'error', "#{err.stack}"
+          @emit 'fail', "#{err.stack}"
 
     @
 
@@ -313,13 +313,13 @@ class CoffeeMill extends EventEmitter
       nextLineNumber = ''
       while nextLineNumber.length < lineNumber.length
         nextLineNumber += ' '
-      @emit 'error', """
+      @emit 'fail', """
         #{csName}:#{first_line}:#{first_column}
         #{(lineNumber + '.')}#{code}
         #{(nextLineNumber + '.')}#{mark}
         """
     else
-      @emit 'error', """
+      @emit 'fail', """
         CoffeeScript Compiler
         #{err}
         """
@@ -388,8 +388,8 @@ module.exports =
     new CoffeeMill(commander)
     .on 'warn', (message) ->
       util.puts message
-    .on 'error', (message) ->
-      util.error message
+    .on 'fail', (message) ->
+      util.puts message
     .on 'created', (filepath) ->
       util.puts "File #{filepath} created"
     .on 'complete', (filenum) ->
