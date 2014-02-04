@@ -22,6 +22,7 @@ class CoffeeMill extends EventEmitter
   @rBreak          : /[\r\n]{3,}/g
 
   constructor: (@options) ->
+    super()
     options.input ?= [ 'src' ]
     options.output ?= [ 'lib' ]
     options.name ?= 'main'
@@ -314,7 +315,6 @@ class CoffeeMill extends EventEmitter
         nextLineNumber += ' '
       @emit 'error', """
         #{csName}:#{first_line}:#{first_column}
-        #{err}
         #{(lineNumber + '.')}#{code}
         #{(nextLineNumber + '.')}#{mark}
         """
@@ -386,12 +386,12 @@ module.exports =
     .parse(process.argv)
 
     new CoffeeMill(commander)
-    .run()
     .on 'warn', (message) ->
-        util.puts message
+      util.puts message
     .on 'error', (message) ->
-        util.puts message
+      util.error message
     .on 'created', (filepath) ->
-        util.puts "File #{filepath} created"
+      util.puts "File #{filepath} created"
     .on 'complete', (filenum) ->
-        util.puts "Done without errors"
+      util.puts "Done without errors"
+    .run()
