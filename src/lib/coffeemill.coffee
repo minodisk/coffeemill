@@ -314,13 +314,14 @@ class CoffeeMill extends EventEmitter
       while nextLineNumber.length < lineNumber.length
         nextLineNumber += ' '
       @emit 'error', """
+        CoffeeScript compile error
         #{csName}:#{first_line}:#{first_column}
         #{(lineNumber + '.')}#{code}
         #{(nextLineNumber + '.')}#{mark}
         """
     else
       @emit 'error', """
-        CoffeeScript Compiler
+        CoffeeScript compile error
         #{err}
         """
 
