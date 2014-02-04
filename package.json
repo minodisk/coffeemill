@@ -1,6 +1,6 @@
 {
   "name": "coffeemill",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "CoffeeScript packager",
   "tags": [
     "coffeescript",
